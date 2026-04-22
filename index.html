@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>原神记录站</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #151b2f;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #eef2ff;
+        --muted: #a7b0d0;
+        --accent: #8ea6ff;
+        --accent-soft: rgba(142, 166, 255, 0.14);
+        color-scheme: dark;
+        font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        background: linear-gradient(180deg, #0a0f1d 0%, #10172b 100%);
+      }
+
+      .unified-app-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        min-height: 100vh;
+        width: 240px;
+        padding: 24px 18px;
+        background: rgba(10, 15, 29, 0.92);
+        border-right: 1px solid var(--border);
+        backdrop-filter: blur(18px);
+        transition: width 0.2s ease, padding 0.2s ease;
+        overflow: hidden;
+      }
+
+      .sidebar.is-collapsed {
+        width: 88px;
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .sidebar-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .sidebar-brand {
+        min-width: 0;
+      }
+
+      .eyebrow {
+        font-size: 12px;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .sidebar-title {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .sidebar-toggle {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        cursor: pointer;
+        font: inherit;
+        flex: 0 0 auto;
+      }
+
+      .sidebar-toggle:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .sidebar-nav {
+        display: grid;
+        gap: 10px;
+      }
+
+      .sidebar-tab {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        padding: 14px;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+        transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+      }
+
+      .sidebar-tab:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-1px);
+      }
+
+      .sidebar-tab.is-active {
+        background: var(--accent-soft);
+        border-color: rgba(142, 166, 255, 0.45);
+      }
+
+      .sidebar-tab-title {
+        display: block;
+        font-size: 15px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .sidebar-tab-desc {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .sidebar.is-collapsed .sidebar-brand,
+      .sidebar.is-collapsed .sidebar-tab-desc {
+        display: none;
+      }
+
+      .sidebar.is-collapsed .sidebar-tab {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .viewer-shell {
+        min-width: 0;
+        min-height: 100vh;
+        padding: 0;
+      }
+
+      .viewer-frame {
+        width: 100%;
+        height: 100vh;
+        border: 0;
+        display: block;
+        background: transparent;
+      }
+
+      @media (max-width: 980px) {
+        .unified-app-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar,
+        .sidebar.is-collapsed {
+          position: static;
+          width: auto;
+          min-height: auto;
+          padding: 16px;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar.is-collapsed .sidebar-title,
+        .sidebar.is-collapsed .sidebar-tab-desc {
+          display: block;
+        }
+
+        .sidebar-nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .viewer-frame {
+          height: calc(100vh - 196px);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .sidebar-nav {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="unified-app-shell">
+      <aside class="sidebar" aria-label="页面导航" id="sidebar">
+        <div class="sidebar-top">
+          <div class="sidebar-brand">
+            <div class="eyebrow">GENSHINLOG</div>
+            <h1 class="sidebar-title">导航</h1>
+          </div>
+          <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="折叠侧边栏" aria-expanded="true">⇤</button>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button class="sidebar-tab is-active" type="button" data-src="./index-wish.html" aria-pressed="true">
+            <span class="sidebar-tab-title">抽卡记录</span>
+            <span class="sidebar-tab-desc">WishHistory</span>
+          </button>
+          <button class="sidebar-tab" type="button" data-src="./index-precious.html" aria-pressed="false">
+            <span class="sidebar-tab-title">贵重资源</span>
+            <span class="sidebar-tab-desc">Material</span>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="viewer-shell">
+        <iframe id="page-frame" class="viewer-frame" title="原神记录站页面" src="./index-wish.html"></iframe>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        const tabs = Array.from(document.querySelectorAll('.sidebar-tab'));
+        const frame = document.querySelector('#page-frame');
+        const sidebar = document.querySelector('#sidebar');
+        const toggle = document.querySelector('#sidebar-toggle');
+
+        function switchPage(src) {
+          tabs.forEach((tab) => {
+            const active = tab.dataset.src === src;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+          });
+          if (frame && frame.getAttribute('src') !== src) {
+            frame.setAttribute('src', src);
+          }
+        }
+
+        function syncToggleState() {
+          const collapsed = sidebar.classList.contains('is-collapsed');
+          toggle.textContent = collapsed ? '⇥' : '⇤';
+          toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          toggle.setAttribute('aria-label', collapsed ? '展开侧边栏' : '折叠侧边栏');
+        }
+
+        tabs.forEach((tab) => {
+          tab.addEventListener('click', () => switchPage(tab.dataset.src));
+        });
+
+        toggle.addEventListener('click', () => {
+          sidebar.classList.toggle('is-collapsed');
+          syncToggleState();
+        });
+
+        switchPage('./index-wish.html');
+        syncToggleState();
+      })();
+    </script>
+  </body>
+</html>

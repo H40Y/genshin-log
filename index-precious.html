@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>贵重资源</title>
+    <link rel="stylesheet" href="./styles-precious.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">MATERIAL</div>
+          <h1>贵重资源</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="tools-actions card tools-actions-top">
+            <button id="upload-trigger" class="ghost-button action-button" type="button">上传 JSON</button>
+            <button id="download-template" class="ghost-button action-button" type="button">下载模板</button>
+            <button id="download-current" class="ghost-button action-button" type="button">导出当前数据</button>
+            <button id="load-sample" class="ghost-button action-button" type="button">加载示例</button>
+            <button id="clear-local-data" class="ghost-button action-button danger-button" type="button">清空本地数据</button>
+          </div>
+          <div id="current-file-label" class="current-file-label" aria-live="polite">当前数据：未加载</div>
+          <div id="dirty-indicator" class="dirty-indicator" aria-live="polite" hidden>当前数据已修改，尚未导出</div>
+          <div id="sync-status" class="sync-status" aria-live="polite">准备就绪</div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="section" id="precious-section"></section>
+      </main>
+    </div>
+
+    <input id="upload-input" type="file" accept="application/json,.json" hidden />
+
+    <dialog id="precious-version-dialog" class="edit-dialog">
+      <form method="dialog" id="precious-version-form" class="edit-form">
+        <div class="dialog-header">
+          <h3 id="precious-version-title">新增版本分组</h3>
+          <button type="button" class="ghost-button" id="precious-version-cancel">取消</button>
+        </div>
+        <div class="form-grid">
+          <label>
+            <span>版本名</span>
+            <input id="precious-version-label-input" name="label" placeholder="如 5.6 / 月之一" required />
+          </label>
+          <label>
+            <span>sortKey</span>
+            <input id="precious-version-sort-key-input" name="sortKey" placeholder="如 5.6 / 6.0" required />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="ghost-button" id="precious-version-delete">删除</button>
+          <button type="submit" class="primary-button">保存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="precious-income-dialog" class="edit-dialog">
+      <form method="dialog" id="precious-income-form" class="edit-form">
+        <div class="dialog-header">
+          <h3 id="precious-income-title">新增收入记录</h3>
+          <button type="button" class="ghost-button" id="precious-income-cancel">取消</button>
+        </div>
+        <div class="form-grid precious-income-form-grid">
+          <label>
+            <span>材料</span>
+            <select id="precious-income-material-input" name="material" required>
+              <option value="sanctifyingUnction">祝圣之霜</option>
+              <option value="sanctifyingEssence">启圣之尘</option>
+            </select>
+          </label>
+          <label>
+            <span>来源</span>
+            <select id="precious-income-source-input" name="source" required></select>
+          </label>
+          <div id="precious-income-mode-fields" class="form-span-2"></div>
+          <label class="form-span-2">
+            <span>备注（可选）</span>
+            <input id="precious-income-note-input" name="note" placeholder="补充说明" />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="ghost-button" id="precious-income-delete">删除</button>
+          <button type="submit" class="primary-button">保存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="precious-expense-dialog" class="edit-dialog">
+      <form method="dialog" id="precious-expense-form" class="edit-form">
+        <div class="dialog-header">
+          <h3 id="precious-expense-title">新增支出记录</h3>
+          <button type="button" class="ghost-button" id="precious-expense-cancel">取消</button>
+        </div>
+        <div class="form-grid">
+          <label>
+            <span>材料</span>
+            <select id="precious-expense-material-input" name="material" required>
+              <option value="sanctifyingUnction">祝圣之霜</option>
+              <option value="sanctifyingEssence">启圣之尘</option>
+            </select>
+          </label>
+          <label>
+            <span>数量</span>
+            <input id="precious-expense-amount-input" name="amount" type="number" min="1" required readonly />
+          </label>
+          <div class="version-picker version-picker-row" id="precious-expense-version-picker">
+            <span class="version-picker-label">版本</span>
+            <button type="button" class="version-picker-trigger" id="precious-expense-version-trigger">
+              <span id="precious-expense-version-trigger-text">请选择版本</span>
+            </button>
+          </div>
+          <label>
+            <span>圣遗物套装</span>
+            <input id="precious-expense-set-name-input" name="setName" required />
+          </label>
+          <label>
+            <span>部位</span>
+            <select id="precious-expense-slot-input" name="slot" required></select>
+          </label>
+          <label>
+            <span>属性</span>
+            <select id="precious-expense-main-stat-input" name="mainStat" required></select>
+          </label>
+          <label>
+            <span>备注（可选）</span>
+            <input id="precious-expense-note-input" name="note" placeholder="补充说明" />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="ghost-button" id="precious-expense-delete">删除</button>
+          <button type="submit" class="primary-button">保存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="version-picker-dialog" class="version-picker-dialog">
+      <div class="version-picker-dialog-shell">
+        <div class="dialog-header version-picker-dialog-header">
+          <h3 id="version-picker-dialog-title">选择版本</h3>
+          <button type="button" class="ghost-button" id="version-picker-dialog-close">关闭</button>
+        </div>
+        <div id="version-picker-select-shell">
+          <div class="cascade-picker version-picker-dialog-body">
+            <div class="cascade-column" id="version-picker-group-list" role="listbox" aria-label="版本组"></div>
+            <div class="cascade-column" id="version-picker-version-list" role="listbox" aria-label="具体版本"></div>
+          </div>
+        </div>
+        <div id="version-picker-edit-shell" hidden>
+          <div class="version-picker-editor-row">
+            <label>
+              <span id="version-picker-editor-label">数量</span>
+              <input id="version-picker-editor-input" type="number" min="0" />
+            </label>
+            <button type="button" class="primary-button" id="version-picker-editor-save">保存当前版本数量</button>
+          </div>
+          <div id="version-picker-editor-hint" class="empty-state"></div>
+          <div id="version-picker-edit-list" class="version-entry-list"></div>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="./app-precious.js"></script>
+  </body>
+</html>

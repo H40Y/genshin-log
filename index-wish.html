@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>抽卡记录</title>
+    <link rel="stylesheet" href="./styles-wish.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">WISHHISTORY</div>
+          <h1>抽卡记录</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="tools-actions card tools-actions-top">
+            <button id="upload-btn" class="ghost-button action-button" type="button">上传 JSON</button>
+            <button id="uigf-btn" class="ghost-button action-button" type="button">导入 UIGF</button>
+            <button id="template-btn" class="ghost-button action-button" type="button">下载模板</button>
+            <button id="export-btn" class="ghost-button action-button" type="button">导出当前数据</button>
+            <button id="sample-btn" class="ghost-button action-button" type="button">加载示例</button>
+            <button id="reset-btn" class="ghost-button action-button danger-button" type="button">清空本地数据</button>
+            <input id="upload-input" type="file" accept="application/json,.json" hidden />
+            <input id="uigf-input" type="file" accept="application/json,.json" hidden />
+          </div>
+          <div id="current-file-label" class="current-file-label" aria-live="polite">当前数据：未加载</div>
+          <div id="dirty-indicator" class="dirty-indicator" aria-live="polite" hidden>当前数据已修改，尚未导出</div>
+          <div id="sync-status" class="sync-status" aria-live="polite">准备就绪</div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="section" id="overview-section"></section>
+        <section class="section" id="banner-section"></section>
+        <section class="section" id="timeline-section"></section>
+        <section class="section" id="history-section"></section>
+      </main>
+    </div>
+
+    <div id="timeline-tooltip" class="timeline-tooltip" hidden></div>
+
+    <dialog id="edit-dialog" class="edit-dialog">
+      <form method="dialog" id="edit-form" class="edit-form">
+        <div class="dialog-header">
+          <h3>修改 5★ 记录</h3>
+          <button type="button" class="ghost-button" id="edit-cancel">取消</button>
+        </div>
+        <div class="form-grid">
+          <label data-field="pullIndex">
+            <span>抽位</span>
+            <input name="pullIndex" type="number" min="1" required />
+          </label>
+          <label>
+            <span>名称</span>
+            <input name="itemName" required />
+          </label>
+          <label>
+            <span>类型</span>
+            <select name="itemType">
+              <option value="角色">角色</option>
+              <option value="武器">武器</option>
+            </select>
+          </label>
+          <label data-field="resultType">
+            <span>结果</span>
+            <select name="resultType">
+              <option value="up">up</option>
+              <option value="off-banner">off-banner</option>
+              <option value="unknown">unknown</option>
+            </select>
+          </label>
+          <label data-field="capturingRadiance">
+            <span>捕获明光</span>
+            <select name="capturingRadiance">
+              <option value="">未记录</option>
+              <option value="true">是</option>
+              <option value="false">否</option>
+            </select>
+          </label>
+          <label data-field="pullVersionLabel">
+            <span>版本标签</span>
+            <input name="pullVersionLabel" placeholder="如 5.6 / 月之一" />
+          </label>
+          <label data-field="pullVersionGroup">
+            <span>版本分组</span>
+            <input name="pullVersionGroup" placeholder="如 5.6.0 / 5.6.5" />
+          </label>
+          <label data-field="time">
+            <span>时间</span>
+            <input name="time" placeholder="如 2025-08-11 08:14:37" />
+          </label>
+          <label data-field="source">
+            <span>来源</span>
+            <select name="source">
+              <option value="manual">manual</option>
+              <option value="auto">auto</option>
+            </select>
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="ghost-button" id="edit-delete">删除条目</button>
+          <button type="submit" class="primary-button">保存修改</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="total-pulls-dialog" class="edit-dialog">
+      <form method="dialog" id="total-pulls-form" class="edit-form">
+        <div class="dialog-header">
+          <h3>修改总抽数</h3>
+          <button type="button" class="ghost-button" id="total-pulls-cancel">取消</button>
+        </div>
+        <div class="form-grid form-grid-single">
+          <label>
+            <span id="total-pulls-label">总抽数</span>
+            <input id="total-pulls-input" name="totalPulls" type="number" min="0" required />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="submit" class="primary-button">保存修改</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="uigf-review-dialog" class="edit-dialog uigf-review-dialog">
+      <form method="dialog" id="uigf-review-form" class="edit-form">
+        <div class="dialog-header">
+          <h3>UIGF 导入结果</h3>
+          <button type="button" class="ghost-button" id="uigf-review-cancel">取消</button>
+        </div>
+        <div id="uigf-review-content" class="uigf-review-content"></div>
+        <div class="dialog-actions">
+          <button type="button" class="ghost-button" id="uigf-review-close">稍后再说</button>
+          <button type="submit" class="primary-button" id="uigf-review-apply">确认应用</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="stat-card-template">
+      <article class="card stat-card">
+        <div class="stat-label"></div>
+        <div class="stat-value"></div>
+        <div class="stat-meta"></div>
+      </article>
+    </template>
+
+    <template id="banner-card-template">
+      <article class="card banner-card">
+        <div class="banner-header">
+          <div>
+            <h3 class="banner-title"></h3>
+            <div class="banner-subtitle"></div>
+          </div>
+          <div class="banner-pill"></div>
+        </div>
+        <div class="banner-grid"></div>
+        <div class="banner-note"></div>
+      </article>
+    </template>
+
+    <script src="./app-wish.js"></script>
+  </body>
+</html>
