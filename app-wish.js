@@ -52,6 +52,8 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const STORAGE_KEY = 'gachaHistory.uploadedData.v1';
 const STORAGE_META_KEY = 'gachaHistory.uploadedDataMeta.v1';
 const STORAGE_BASELINE_KEY = 'gachaHistory.baselineData.v1';
+const STANDARD_CHARACTER_NAMES = new Set(['迪卢克', '琴', '七七', '刻晴', '莫娜', '提纳里', '迪希雅', '梦见月瑞希']);
+const STANDARD_WEAPON_NAMES = new Set(['风鹰剑', '天空之刃', '狼的末路', '天空之傲', '和璞鸢', '天空之脊', '四风原典', '天空之卷', '阿莫斯之弓', '天空之翼']);
 
 let storageAvailable = true;
 let currentData = null;
@@ -70,6 +72,15 @@ function fmt(n) {
 
 function pct(value) {
   return `${((value ?? 0) * 100).toFixed(2)}%`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function average(nums) {
@@ -186,6 +197,19 @@ function isLimitedBanner(bannerKey) {
 
 function shouldShowCapturingRadiance(bannerKey) {
   return bannerKey === 'limitedCharacter';
+}
+
+function inferLimitedResultType(bannerKey, itemName, itemType) {
+  if (bannerKey === 'standard') return 'off-banner';
+  if (bannerKey === 'limitedCharacter') {
+    return STANDARD_CHARACTER_NAMES.has(itemName) ? 'off-banner' : 'up';
+  }
+  if (bannerKey === 'limitedWeapon') {
+    return STANDARD_WEAPON_NAMES.has(itemName) ? 'off-banner' : 'up';
+  }
+  if (itemType === '角色') return STANDARD_CHARACTER_NAMES.has(itemName) ? 'off-banner' : 'unknown';
+  if (itemType === '武器') return STANDARD_WEAPON_NAMES.has(itemName) ? 'off-banner' : 'unknown';
+  return 'unknown';
 }
 
 function getBadgeData(item, bannerKey) {
@@ -1746,6 +1770,9 @@ function buildDiff(schema, uigfList, gachaType) {
           itemName: row.name,
           itemType: row.item_type,
           time: row.time,
+          resultType: inferLimitedResultType(bannerKey, row.name, row.item_type),
+          capturingRadiance: null,
+          pullVersion: null,
           originalLocalIndex: row.originalLocalIndex,
           reversedLocalIndex: row.reversedLocalIndex,
         });
@@ -1818,9 +1845,14 @@ function applyDiff(schema, diff) {
       time: item.time,
       itemName: item.itemName,
       itemType: item.itemType,
-      resultType: diff.bannerKey === 'standard' ? 'off-banner' : 'unknown',
-      capturingRadiance: null,
-      pullVersion: null,
+      resultType: item.resultType ?? (diff.bannerKey === 'standard' ? 'off-banner' : 'unknown'),
+      capturingRadiance: item.capturingRadiance ?? null,
+      pullVersion: item.pullVersion
+        ? {
+            label: item.pullVersion.label ?? '',
+            group: item.pullVersion.group ?? null,
+          }
+        : null,
       source: 'auto',
     });
   }
@@ -1839,6 +1871,148 @@ function summarizeUigfResult(checks, diffs) {
 
   const failed = checks.filter((item) => !item.ok);
   return { count, failed };
+}
+
+function getUigfSupplementalItems(review) {
+  if (!review?.diffs) return [];
+  return review.diffs.flatMap((diff) => {
+    if (!isLimitedBanner(diff.bannerKey)) return [];
+    return diff.newFiveStars.map((item, itemIndex) => ({
+      diff,
+      item,
+      itemIndex,
+      key: `${diff.bannerKey}:${item.pullIndex}:${itemIndex}`,
+    }));
+  });
+}
+
+function renderResultTypeOptions(value) {
+  return [
+    ['up', 'up'],
+    ['off-banner', 'off-banner'],
+    ['unknown', 'unknown'],
+  ].map(([optionValue, label]) => `<option value="${optionValue}"${value === optionValue ? ' selected' : ''}>${label}</option>`).join('');
+}
+
+function renderCapturingRadianceOptions(value) {
+  return [
+    ['', '未记录'],
+    ['true', '是'],
+    ['false', '否'],
+  ].map(([optionValue, label]) => {
+    const normalizedValue = value === null || value === undefined ? '' : String(Boolean(value));
+    return `<option value="${optionValue}"${normalizedValue === optionValue ? ' selected' : ''}>${label}</option>`;
+  }).join('');
+}
+
+function renderUigfSupplementalSection(review) {
+  const items = getUigfSupplementalItems(review);
+  if (!items.length) {
+    return `
+      <section class="uigf-section">
+        <h4>待补充信息</h4>
+        <div class="uigf-note">本次没有新增限定 5★ 记录。</div>
+      </section>
+    `;
+  }
+
+  const rows = items.map(({ diff, item, itemIndex }) => {
+    const versionLabel = item.pullVersion?.label ?? '';
+    const versionGroup = item.pullVersion?.group ?? '';
+    const captureControl = diff.bannerKey === 'limitedCharacter'
+      ? `<select data-uigf-field="capturingRadiance" data-banner="${diff.bannerKey}" data-index="${itemIndex}">${renderCapturingRadianceOptions(item.capturingRadiance)}</select>`
+      : '<span class="uigf-muted-cell">—</span>';
+
+    return `
+      <tr>
+        <td>${escapeHtml(diff.bannerLabel)}</td>
+        <td>${item.pullIndex}</td>
+        <td>${escapeHtml(item.itemName)}</td>
+        <td>${escapeHtml(item.itemType)}</td>
+        <td>
+          <select data-uigf-field="resultType" data-banner="${diff.bannerKey}" data-index="${itemIndex}">
+            ${renderResultTypeOptions(item.resultType ?? 'unknown')}
+          </select>
+        </td>
+        <td><input data-uigf-field="pullVersionLabel" data-banner="${diff.bannerKey}" data-index="${itemIndex}" value="${escapeHtml(versionLabel)}" placeholder="如 5.6 / 月之一" /></td>
+        <td><input data-uigf-field="pullVersionGroup" data-banner="${diff.bannerKey}" data-index="${itemIndex}" value="${escapeHtml(versionGroup)}" placeholder="如 5.6.0 / 5.6.5" /></td>
+        <td>${captureControl}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <section class="uigf-section">
+      <h4>待补充信息</h4>
+      <div class="uigf-supplemental-toolbar">
+        <label>
+          <span>批量版本标签</span>
+          <input id="uigf-batch-version-label" placeholder="如 5.6 / 月之一" />
+        </label>
+        <label>
+          <span>批量版本分组</span>
+          <input id="uigf-batch-version-group" placeholder="如 5.6.0 / 5.6.5" />
+        </label>
+        <button type="button" class="ghost-button compact-button" id="uigf-batch-fill-empty">填充空白</button>
+        <button type="button" class="ghost-button compact-button" id="uigf-batch-fill-all">覆盖全部</button>
+      </div>
+      <div class="table-wrap uigf-supplemental-table-wrap">
+        <table class="uigf-supplemental-table">
+          <thead>
+            <tr>
+              <th>池子</th>
+              <th>抽位</th>
+              <th>名称</th>
+              <th>类型</th>
+              <th>结果</th>
+              <th>版本标签</th>
+              <th>版本分组</th>
+              <th>捕获明光</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function bindUigfSupplementalControls() {
+  const fillVersionInputs = (overwrite) => {
+    const labelValue = uigfReviewContent.querySelector('#uigf-batch-version-label')?.value.trim() ?? '';
+    const groupValue = uigfReviewContent.querySelector('#uigf-batch-version-group')?.value.trim() ?? '';
+
+    uigfReviewContent.querySelectorAll('[data-uigf-field="pullVersionLabel"]').forEach((input) => {
+      if (overwrite || !input.value.trim()) input.value = labelValue;
+    });
+    uigfReviewContent.querySelectorAll('[data-uigf-field="pullVersionGroup"]').forEach((input) => {
+      if (overwrite || !input.value.trim()) input.value = groupValue;
+    });
+  };
+
+  uigfReviewContent.querySelector('#uigf-batch-fill-empty')?.addEventListener('click', () => fillVersionInputs(false));
+  uigfReviewContent.querySelector('#uigf-batch-fill-all')?.addEventListener('click', () => fillVersionInputs(true));
+}
+
+function syncUigfSupplementalInputs(review) {
+  const items = getUigfSupplementalItems(review);
+  for (const { diff, item, itemIndex } of items) {
+    const fieldSelector = (field) => `[data-uigf-field="${field}"][data-banner="${diff.bannerKey}"][data-index="${itemIndex}"]`;
+    const resultType = uigfReviewContent.querySelector(fieldSelector('resultType'))?.value ?? 'unknown';
+    const label = uigfReviewContent.querySelector(fieldSelector('pullVersionLabel'))?.value.trim() ?? '';
+    const group = uigfReviewContent.querySelector(fieldSelector('pullVersionGroup'))?.value.trim() ?? '';
+    const captureValue = uigfReviewContent.querySelector(fieldSelector('capturingRadiance'))?.value ?? '';
+
+    if (!label || !group) {
+      throw new Error(`请补充 ${diff.bannerLabel} ${item.pullIndex} 抽 ${item.itemName} 的版本标签和版本分组。`);
+    }
+
+    item.resultType = resultType;
+    item.pullVersion = { label, group };
+    item.capturingRadiance = diff.bannerKey === 'limitedCharacter'
+      ? (captureValue === '' ? null : captureValue === 'true')
+      : null;
+  }
 }
 
 function renderUigfReviewPanel(review) {
@@ -1914,8 +2088,10 @@ function renderUigfReviewPanel(review) {
       <h4>变更详情</h4>
       <div class="uigf-diff-grid">${diffHtml}</div>
     </section>
+    ${renderUigfSupplementalSection(review)}
   `;
 
+  bindUigfSupplementalControls();
   uigfReviewApplyBtn.disabled = failed.length > 0;
 }
 
@@ -1949,6 +2125,8 @@ function applyPendingUigfReview() {
   if (failed.length > 0) {
     throw new Error('当前存在 offset 校验失败，不能应用。');
   }
+
+  syncUigfSupplementalInputs(pendingUigfReview);
 
   const next = cloneData(currentData);
   pendingUigfReview.diffs.forEach((diff) => applyDiff(next, diff));
