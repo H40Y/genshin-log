@@ -74,6 +74,13 @@ function pct(value) {
   return `${((value ?? 0) * 100).toFixed(2)}%`;
 }
 
+function formatExportDate(date = new Date()) {
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -2196,7 +2203,7 @@ exportBtn?.addEventListener('click', () => {
     return;
   }
 
-  downloadJsonFile(cloneData(currentData), 'wish-data.schema-v4.export.json');
+  downloadJsonFile(cloneData(currentData), `wish-data.${formatExportDate()}.json`);
   setDirty(false);
   persistSnapshot();
   setSyncStatus('导出完成。', 'success');

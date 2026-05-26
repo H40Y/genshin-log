@@ -380,6 +380,12 @@ function loadStoredMeta(key) {
   const raw = localStorage.getItem(key);
   return raw ? JSON.parse(raw) : null;
 }
+function formatExportDate(date = new Date()) {
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+}
 function clearPreciousStorage() {
   if (!storageAvailable) return;
   localStorage.removeItem(PRECIOUS_STORAGE_KEY);
@@ -398,7 +404,7 @@ function downloadJsonFile(data, filename) {
   URL.revokeObjectURL(url);
 }
 function handleTemplateDownload() { downloadJsonFile(buildPreciousTemplateData(), 'precious-resources.schema-v1.template.json'); setSyncStatus('模板已下载。', 'success'); }
-function handleExport() { downloadJsonFile(cloneData(getPreciousData()), 'precious-resources.schema-v1.export.json'); preciousDirty = false; persistPreciousSnapshot(); updateDirtyIndicator(); setSyncStatus('导出完成。', 'success'); }
+function handleExport() { downloadJsonFile(cloneData(getPreciousData()), `precious-resources.${formatExportDate()}.json`); preciousDirty = false; persistPreciousSnapshot(); updateDirtyIndicator(); setSyncStatus('导出完成。', 'success'); }
 function handleClearLocalData() {
   if (!window.confirm('确定清空当前贵重资源页的本地数据吗？这不会删除你已经导出的 JSON 文件。')) return;
   currentPreciousData = buildPreciousTemplateData(); baselinePreciousData = null; currentPreciousFileName = '未加载'; preciousDirty = false; clearPreciousStorage(); rerenderPrecious(); updateCurrentFileLabel(); updateDirtyIndicator(); setSyncStatus('已清空贵重资源页本地数据。', 'success');
