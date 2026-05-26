@@ -774,7 +774,6 @@ function getAverageUpCurveStats(points) {
   return {
     min: Math.min(...values),
     max: Math.max(...values),
-    avg: average(values),
   };
 }
 
@@ -785,7 +784,6 @@ function createAverageUpCurveStats(points) {
   [
     ['最低', stats.min],
     ['最高', stats.max],
-    ['平均', stats.avg],
   ].forEach(([label, value]) => {
     const item = document.createElement('div');
     item.className = 'average-up-curve-stat';
