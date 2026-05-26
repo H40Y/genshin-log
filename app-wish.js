@@ -503,6 +503,29 @@ function getUpEvents(history) {
   return events;
 }
 
+function getAverageUpCurvePoints(history, typeLabel) {
+  const points = [];
+  let previousUpPullIndex = 0;
+  let totalCost = 0;
+
+  history.forEach((item) => {
+    if (item.resultType !== 'up') return;
+
+    const cost = item.pullIndex - previousUpPullIndex;
+    totalCost += cost;
+    points.push({
+      item,
+      typeLabel,
+      index: points.length + 1,
+      cost,
+      average: totalCost / (points.length + 1),
+    });
+    previousUpPullIndex = item.pullIndex;
+  });
+
+  return points;
+}
+
 function groupUpEventsByVersion(events) {
   const grouped = new Map();
 
@@ -704,6 +727,343 @@ function createTimelineTrack(title, versionGroups, typeLabel, maxCost) {
   return track;
 }
 
+function showAverageUpCurveTooltip(event, point) {
+  if (!timelineTooltip) return;
+
+  timelineTooltip.innerHTML = `
+    <div class="timeline-tooltip-line average-up-curve-tooltip-value">${point.average.toFixed(2)} 抽</div>
+  `;
+
+  timelineTooltip.hidden = false;
+  moveTimelineTooltip(event);
+}
+
+function getAverageUpCurveStats(points) {
+  const values = points.map((point) => point.average);
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+    avg: average(values),
+  };
+}
+
+function createAverageUpCurveStats(points) {
+  const stats = getAverageUpCurveStats(points);
+  const node = document.createElement('div');
+  node.className = 'average-up-curve-stats';
+  [
+    ['最低', stats.min],
+    ['最高', stats.max],
+    ['平均', stats.avg],
+  ].forEach(([label, value]) => {
+    const item = document.createElement('div');
+    item.className = 'average-up-curve-stat';
+    item.innerHTML = `<span>${label}</span>${value.toFixed(2)} 抽`;
+    node.appendChild(item);
+  });
+  return node;
+}
+
+function createAverageUpCurveSvg(series, options = {}) {
+  const { mini = false, rangeStart = 0, rangeEnd = 1, chartWidth = 860 } = options;
+  const points = series.points;
+  const width = Math.max(360, Math.round(chartWidth));
+  const height = mini ? 54 : 260;
+  const pad = mini
+    ? { top: 8, right: 12, bottom: 8, left: 12 }
+    : { top: 18, right: 16, bottom: 18, left: 36 };
+  const plotWidth = width - pad.left - pad.right;
+  const plotHeight = height - pad.top - pad.bottom;
+  const maxAverage = Math.max(10, ...points.map((point) => point.average));
+  const yMax = Math.ceil(maxAverage / 10) * 10;
+  const pointRatio = (index) => {
+    if (points.length <= 1) return 0.5;
+    return (index - 1) / (points.length - 1);
+  };
+  const xFor = (index) => {
+    if (points.length <= 1) return pad.left + plotWidth / 2;
+    const ratio = pointRatio(index);
+    const start = mini ? 0 : rangeStart;
+    const end = mini ? 1 : rangeEnd;
+    return pad.left + ((ratio - start) / Math.max(0.01, end - start)) * plotWidth;
+  };
+  const yFor = (value) => pad.top + plotHeight - (value / yMax) * plotHeight;
+  const yTicks = mini ? [] : [...new Set([0, Math.round(yMax / 2), yMax])];
+  const visiblePoints = mini
+    ? points
+    : points.filter((point) => {
+      const ratio = pointRatio(point.index);
+      return ratio >= rangeStart && ratio <= rangeEnd;
+    });
+  const averageAtRatio = (ratio) => {
+    if (points.length <= 1) return points[0]?.average ?? 0;
+
+    const scaledIndex = ratio * (points.length - 1);
+    const leftIndex = Math.floor(scaledIndex);
+    const rightIndex = Math.ceil(scaledIndex);
+    const left = points[leftIndex];
+    const right = points[rightIndex];
+    if (!left || !right || leftIndex === rightIndex) return (left || right)?.average ?? 0;
+
+    const progress = scaledIndex - leftIndex;
+    return left.average + (right.average - left.average) * progress;
+  };
+  const linePoints = mini || points.length <= 1
+    ? visiblePoints
+    : [
+      { index: 1 + rangeStart * (points.length - 1), average: averageAtRatio(rangeStart) },
+      ...visiblePoints,
+      { index: 1 + rangeEnd * (points.length - 1), average: averageAtRatio(rangeEnd) },
+    ];
+  const svgNs = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNs, 'svg');
+  svg.setAttribute('class', mini ? 'average-up-curve-navigator-svg' : 'average-up-curve-svg');
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `${series.label}平均 UP 抽数变化曲线`);
+
+  yTicks.forEach((tick) => {
+    const y = yFor(tick);
+    const line = document.createElementNS(svgNs, 'line');
+    line.setAttribute('class', 'average-up-curve-grid');
+    line.setAttribute('x1', pad.left);
+    line.setAttribute('x2', width - pad.right);
+    line.setAttribute('y1', y);
+    line.setAttribute('y2', y);
+    svg.appendChild(line);
+
+    const label = document.createElementNS(svgNs, 'text');
+    label.setAttribute('class', 'average-up-curve-axis-label');
+    label.setAttribute('x', pad.left - 12);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.textContent = String(tick);
+    svg.appendChild(label);
+  });
+
+  const polyline = document.createElementNS(svgNs, 'polyline');
+  polyline.setAttribute('class', `average-up-curve-line ${series.className}`);
+  polyline.setAttribute(
+    'points',
+    linePoints.map((point) => `${xFor(point.index)},${yFor(point.average)}`).join(' '),
+  );
+  svg.appendChild(polyline);
+
+  visiblePoints.forEach((point) => {
+    const cx = xFor(point.index);
+    const cy = yFor(point.average);
+    const circle = document.createElementNS(svgNs, 'circle');
+    circle.setAttribute('class', `average-up-curve-point ${series.className}`);
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', mini ? 2.5 : 4);
+    svg.appendChild(circle);
+
+    if (!mini) {
+      const hitArea = document.createElementNS(svgNs, 'circle');
+      hitArea.setAttribute('class', 'average-up-curve-hit-area');
+      hitArea.setAttribute('cx', cx);
+      hitArea.setAttribute('cy', cy);
+      hitArea.setAttribute('r', 12);
+      hitArea.addEventListener('mouseenter', (domEvent) => showAverageUpCurveTooltip(domEvent, point));
+      hitArea.addEventListener('mousemove', moveTimelineTooltip);
+      hitArea.addEventListener('mouseleave', hideTimelineTooltip);
+      svg.appendChild(hitArea);
+    }
+  });
+
+  return svg;
+}
+
+function syncAverageUpNavigator(thumb, state) {
+  const start = Math.min(state.start, state.end);
+  const end = Math.max(state.start, state.end);
+  thumb.style.left = `${start * 100}%`;
+  thumb.style.width = `${Math.max(0, end - start) * 100}%`;
+}
+
+function clampAverageUpRange(state, minRange, maxRange) {
+  const range = Math.min(maxRange, Math.max(minRange, state.end - state.start));
+  const center = (state.start + state.end) / 2;
+  state.start = Math.min(1 - range, Math.max(0, center - range / 2));
+  state.end = state.start + range;
+}
+
+function applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart) {
+  clampAverageUpRange(state, minRange, maxRange);
+  renderMainChart();
+  syncAverageUpNavigator(thumb, state);
+}
+
+function createAverageUpCurveTrack(series) {
+  const track = document.createElement('div');
+  track.className = 'average-up-curve-track';
+
+  const header = document.createElement('div');
+  header.className = 'average-up-curve-track-header';
+
+  const title = document.createElement('div');
+  title.className = 'average-up-curve-track-title';
+  title.textContent = series.label;
+
+  header.append(title, createAverageUpCurveStats(series.points));
+
+  const viewport = document.createElement('div');
+  viewport.className = 'average-up-curve-viewport';
+
+  const navigator = document.createElement('div');
+  navigator.className = 'average-up-curve-navigator';
+
+  const renderNavigatorChart = () => {
+    const existingThumb = navigator.querySelector('.average-up-curve-navigator-thumb');
+    navigator.replaceChildren(createAverageUpCurveSvg(series, {
+      mini: true,
+      chartWidth: navigator.clientWidth || 860,
+    }));
+    if (existingThumb) navigator.appendChild(existingThumb);
+  };
+
+  const thumb = document.createElement('div');
+  thumb.className = 'average-up-curve-navigator-thumb';
+
+  const leftHandle = document.createElement('span');
+  leftHandle.className = 'average-up-curve-navigator-handle average-up-curve-navigator-handle-left';
+
+  const rightHandle = document.createElement('span');
+  rightHandle.className = 'average-up-curve-navigator-handle average-up-curve-navigator-handle-right';
+
+  thumb.append(leftHandle, rightHandle);
+  navigator.appendChild(thumb);
+
+  const state = {
+    start: 0,
+    end: 1,
+  };
+
+  const maxRange = 1;
+  const minRange = Math.min(maxRange, Math.max(0.18, 1 / Math.max(1, series.points.length)));
+  const renderMainChart = () => {
+    viewport.replaceChildren(createAverageUpCurveSvg(series, {
+      rangeStart: state.start,
+      rangeEnd: state.end,
+      chartWidth: viewport.clientWidth || 860,
+    }));
+  };
+
+  const resizeObserver = new ResizeObserver(() => {
+    if (!document.body.contains(viewport)) {
+      resizeObserver.disconnect();
+      return;
+    }
+    renderMainChart();
+    renderNavigatorChart();
+    syncAverageUpNavigator(thumb, state);
+  });
+  resizeObserver.observe(viewport);
+  resizeObserver.observe(navigator);
+
+  const ratioFromClientX = (clientX) => {
+    const rect = navigator.getBoundingClientRect();
+    if (!rect.width) return 0;
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+  };
+
+  const moveRangeTo = (centerRatio) => {
+    const range = state.end - state.start;
+    state.start = Math.min(1 - range, Math.max(0, centerRatio - range / 2));
+    state.end = state.start + range;
+    applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart);
+  };
+
+  const resizeRange = (side, ratio) => {
+    if (side === 'left') {
+      state.start = Math.min(state.end - minRange, Math.max(state.end - maxRange, Math.max(0, ratio)));
+    } else {
+      state.end = Math.max(state.start + minRange, Math.min(state.start + maxRange, Math.min(1, ratio)));
+    }
+    applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart);
+  };
+
+  const startDrag = (event, mode) => {
+    event.preventDefault();
+    const dragTarget = event.currentTarget;
+    dragTarget.setPointerCapture(event.pointerId);
+    if (mode === 'move') {
+      moveRangeTo(ratioFromClientX(event.clientX));
+    } else {
+      resizeRange(mode, ratioFromClientX(event.clientX));
+    }
+
+    const onPointerMove = (moveEvent) => {
+      if (mode === 'move') {
+        moveRangeTo(ratioFromClientX(moveEvent.clientX));
+      } else {
+        resizeRange(mode, ratioFromClientX(moveEvent.clientX));
+      }
+    };
+    const onPointerUp = (upEvent) => {
+      dragTarget.releasePointerCapture(upEvent.pointerId);
+      dragTarget.removeEventListener('pointermove', onPointerMove);
+      dragTarget.removeEventListener('pointerup', onPointerUp);
+    };
+
+    dragTarget.addEventListener('pointermove', onPointerMove);
+    dragTarget.addEventListener('pointerup', onPointerUp);
+  };
+
+  leftHandle.addEventListener('pointerdown', (event) => startDrag(event, 'left'));
+  rightHandle.addEventListener('pointerdown', (event) => startDrag(event, 'right'));
+  thumb.addEventListener('pointerdown', (event) => {
+    if (event.target === leftHandle || event.target === rightHandle) return;
+    startDrag(event, 'move');
+  });
+  navigator.addEventListener('pointerdown', (event) => {
+    if (event.target === thumb || event.target === leftHandle || event.target === rightHandle) return;
+    event.preventDefault();
+    moveRangeTo(ratioFromClientX(event.clientX));
+  });
+
+  requestAnimationFrame(() => {
+    state.end = maxRange;
+    renderNavigatorChart();
+    applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart);
+  });
+  track.append(header, viewport, navigator);
+  return track;
+}
+
+function createAverageUpCurveChart(seriesList) {
+  const chart = document.createElement('div');
+  chart.className = 'average-up-curve';
+
+  const header = document.createElement('div');
+  header.className = 'timeline-track-header';
+  header.textContent = '平均 UP 抽数';
+
+  const content = document.createElement('div');
+  content.className = 'average-up-curve-content';
+
+  const points = seriesList.flatMap((series) => series.points);
+  if (!points.length) {
+    const empty = document.createElement('div');
+    empty.className = 'card empty-state';
+    empty.textContent = '暂无可展示的 UP 记录';
+    content.appendChild(empty);
+    chart.append(header, content);
+    return chart;
+  }
+
+  seriesList.forEach((series) => {
+    if (!series.points.length) return;
+    content.appendChild(createAverageUpCurveTrack(series));
+  });
+
+  chart.append(header, content);
+  return chart;
+}
+
 function stabilizeTimelineRender() {
   const blocks = timelineSection.querySelectorAll('.timeline-version-block');
   if (!blocks.length) return;
@@ -735,7 +1095,7 @@ function renderTimeline(data) {
 
   timelineSection.innerHTML = `
     <div class="section-header">
-      <h2>时间轴模式</h2>
+      <h2>时间轴</h2>
     </div>
   `;
 
@@ -744,6 +1104,18 @@ function renderTimeline(data) {
   shell.append(
     createTimelineTrack('角色池 UP 时间轴', characterGroups, '角色池', maxCost),
     createTimelineTrack('武器池 UP 时间轴', weaponGroups, '武器池', maxCost),
+    createAverageUpCurveChart([
+      {
+        label: '角色池',
+        className: 'average-up-curve-character',
+        points: getAverageUpCurvePoints(data.wishData.limitedCharacter.fiveStarHistory || [], '角色池'),
+      },
+      {
+        label: '武器池',
+        className: 'average-up-curve-weapon',
+        points: getAverageUpCurvePoints(data.wishData.limitedWeapon.fiveStarHistory || [], '武器池'),
+      },
+    ]),
   );
 
   timelineSection.appendChild(shell);
