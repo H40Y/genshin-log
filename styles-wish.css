@@ -460,6 +460,24 @@ code {
 .average-up-curve-stat span {
   color: var(--muted);
 }
+.average-up-curve-trend {
+  min-width: 48px;
+  justify-content: center;
+  font-weight: 800;
+}
+.average-up-curve-trend-up {
+  color: #ff6b5f;
+  border-color: rgba(255, 107, 95, 0.35);
+  background: rgba(255, 107, 95, 0.10);
+}
+.average-up-curve-trend-down {
+  color: #7bd88f;
+  border-color: rgba(123, 216, 143, 0.35);
+  background: rgba(123, 216, 143, 0.10);
+}
+.average-up-curve-trend-flat {
+  color: var(--text);
+}
 .average-up-curve-viewport {
   overflow: hidden;
   border: 1px solid var(--border);

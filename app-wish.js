@@ -49,6 +49,9 @@ const BANNER_KEY_BY_GACHA_TYPE = {
 };
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const AVERAGE_UP_DEFAULT_VISIBLE_POINTS = 10;
+const AVERAGE_UP_AXIS_PADDING = 20;
+const AVERAGE_UP_RANGE_EPSILON = 0.000001;
 const STORAGE_KEY = 'gachaHistory.uploadedData.v1';
 const STORAGE_META_KEY = 'gachaHistory.uploadedDataMeta.v1';
 const STORAGE_BASELINE_KEY = 'gachaHistory.baselineData.v1';
@@ -769,16 +772,47 @@ function showAverageUpCurveTooltip(event, point) {
   moveTimelineTooltip(event);
 }
 
+function getAverageUpPointRatio(points, index) {
+  if (points.length <= 1) return 0.5;
+  return (index - 1) / (points.length - 1);
+}
+
+function getAverageUpVisiblePoints(points, rangeStart, rangeEnd) {
+  if (points.length <= 1) return points;
+
+  const start = Math.min(rangeStart, rangeEnd);
+  const end = Math.max(rangeStart, rangeEnd);
+  return points.filter((point) => {
+    const ratio = getAverageUpPointRatio(points, point.index);
+    return ratio >= start - AVERAGE_UP_RANGE_EPSILON && ratio <= end + AVERAGE_UP_RANGE_EPSILON;
+  });
+}
+
 function getAverageUpCurveStats(points) {
   const values = points.map((point) => point.average);
   return {
-    min: Math.min(...values),
-    max: Math.max(...values),
+    min: values.length ? Math.min(...values) : 0,
+    max: values.length ? Math.max(...values) : 0,
   };
+}
+
+function getAverageUpCurveTrend(points) {
+  if (points.length < 2) {
+    return { label: '持平', symbol: '→', className: 'average-up-curve-trend-flat' };
+  }
+
+  const diff = points[points.length - 1].average - points[0].average;
+  if (Math.abs(diff) < AVERAGE_UP_RANGE_EPSILON) {
+    return { label: '持平', symbol: '→', className: 'average-up-curve-trend-flat' };
+  }
+  return diff > 0
+    ? { label: '上升', symbol: '↑', className: 'average-up-curve-trend-up' }
+    : { label: '下降', symbol: '↓', className: 'average-up-curve-trend-down' };
 }
 
 function createAverageUpCurveStats(points) {
   const stats = getAverageUpCurveStats(points);
+  const trend = getAverageUpCurveTrend(points);
   const node = document.createElement('div');
   node.className = 'average-up-curve-stats';
   [
@@ -790,40 +824,76 @@ function createAverageUpCurveStats(points) {
     item.innerHTML = `<span>${label}</span>${value.toFixed(2)} 抽`;
     node.appendChild(item);
   });
+
+  const trendItem = document.createElement('div');
+  trendItem.className = `average-up-curve-stat average-up-curve-trend ${trend.className}`;
+  trendItem.innerHTML = `<span>趋势</span>${trend.symbol}`;
+  trendItem.title = trend.label;
+  node.appendChild(trendItem);
   return node;
 }
 
+function formatAverageUpAxisTick(value) {
+  return String(Math.round(value));
+}
+
+function getAverageUpCurvePad(mini) {
+  return mini
+    ? { top: 8, right: 12, bottom: 8, left: 12 }
+    : { top: 18, right: 16, bottom: 18, left: 36 };
+}
+
+function getAverageUpNavigatorDataRange(rangeStart, rangeEnd, navigatorWidth) {
+  const width = Math.max(360, Math.round(navigatorWidth || 860));
+  const pad = getAverageUpCurvePad(true);
+  const plotWidth = Math.max(1, width - pad.left - pad.right);
+  const startPx = Math.min(rangeStart, rangeEnd) * width;
+  const endPx = Math.max(rangeStart, rangeEnd) * width;
+
+  return {
+    start: (startPx - pad.left) / plotWidth,
+    end: (endPx - pad.left) / plotWidth,
+  };
+}
+
+function getAverageUpNavigatorRatioForDataRatio(dataRatio, navigatorWidth) {
+  const width = Math.max(360, Math.round(navigatorWidth || 860));
+  const pad = getAverageUpCurvePad(true);
+  const plotWidth = Math.max(1, width - pad.left - pad.right);
+  return Math.min(1, Math.max(0, (pad.left + dataRatio * plotWidth) / width));
+}
+
 function createAverageUpCurveSvg(series, options = {}) {
-  const { mini = false, rangeStart = 0, rangeEnd = 1, chartWidth = 860 } = options;
+  const {
+    mini = false,
+    rangeStart = 0,
+    rangeEnd = 1,
+    chartWidth = 860,
+    navigatorWidth = chartWidth,
+  } = options;
   const points = series.points;
   const width = Math.max(360, Math.round(chartWidth));
   const height = mini ? 54 : 260;
-  const pad = mini
-    ? { top: 8, right: 12, bottom: 8, left: 12 }
-    : { top: 18, right: 16, bottom: 18, left: 36 };
+  const pad = getAverageUpCurvePad(mini);
   const plotWidth = width - pad.left - pad.right;
   const plotHeight = height - pad.top - pad.bottom;
-  const maxAverage = Math.max(10, ...points.map((point) => point.average));
-  const yMax = Math.ceil(maxAverage / 10) * 10;
-  const pointRatio = (index) => {
-    if (points.length <= 1) return 0.5;
-    return (index - 1) / (points.length - 1);
-  };
+  const stats = getAverageUpCurveStats(points);
+  const yMin = Math.max(0, Math.floor((stats.min - AVERAGE_UP_AXIS_PADDING) / 10) * 10);
+  const yMax = Math.ceil((stats.max + AVERAGE_UP_AXIS_PADDING) / 10) * 10;
+  const yRange = Math.max(1, yMax - yMin);
+  const dataRange = mini
+    ? { start: 0, end: 1 }
+    : getAverageUpNavigatorDataRange(rangeStart, rangeEnd, navigatorWidth);
   const xFor = (index) => {
     if (points.length <= 1) return pad.left + plotWidth / 2;
-    const ratio = pointRatio(index);
-    const start = mini ? 0 : rangeStart;
-    const end = mini ? 1 : rangeEnd;
+    const ratio = getAverageUpPointRatio(points, index);
+    const start = dataRange.start;
+    const end = dataRange.end;
     return pad.left + ((ratio - start) / Math.max(0.01, end - start)) * plotWidth;
   };
-  const yFor = (value) => pad.top + plotHeight - (value / yMax) * plotHeight;
-  const yTicks = mini ? [] : [...new Set([0, Math.round(yMax / 2), yMax])];
-  const visiblePoints = mini
-    ? points
-    : points.filter((point) => {
-      const ratio = pointRatio(point.index);
-      return ratio >= rangeStart && ratio <= rangeEnd;
-    });
+  const yFor = (value) => pad.top + plotHeight - ((value - yMin) / yRange) * plotHeight;
+  const yTicks = mini ? [] : [...new Set([yMin, (yMin + yMax) / 2, yMax])];
+  const visiblePoints = mini ? points : getAverageUpVisiblePoints(points, dataRange.start, dataRange.end);
   const averageAtRatio = (ratio) => {
     if (points.length <= 1) return points[0]?.average ?? 0;
 
@@ -837,13 +907,29 @@ function createAverageUpCurveSvg(series, options = {}) {
     const progress = scaledIndex - leftIndex;
     return left.average + (right.average - left.average) * progress;
   };
-  const linePoints = mini || points.length <= 1
-    ? visiblePoints
-    : [
-      { index: 1 + rangeStart * (points.length - 1), average: averageAtRatio(rangeStart) },
-      ...visiblePoints,
-      { index: 1 + rangeEnd * (points.length - 1), average: averageAtRatio(rangeEnd) },
-    ];
+  const linePoints = (() => {
+    if (mini || points.length <= 1) return visiblePoints;
+
+    const clampedStart = Math.max(0, dataRange.start);
+    const clampedEnd = Math.min(1, dataRange.end);
+    if (clampedStart > clampedEnd) return [];
+
+    const line = [];
+    if (dataRange.start > 0) {
+      line.push({
+        index: 1 + clampedStart * (points.length - 1),
+        average: averageAtRatio(clampedStart),
+      });
+    }
+    line.push(...visiblePoints);
+    if (dataRange.end < 1) {
+      line.push({
+        index: 1 + clampedEnd * (points.length - 1),
+        average: averageAtRatio(clampedEnd),
+      });
+    }
+    return line;
+  })();
   const svgNs = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNs, 'svg');
   svg.setAttribute('class', mini ? 'average-up-curve-navigator-svg' : 'average-up-curve-svg');
@@ -868,7 +954,7 @@ function createAverageUpCurveSvg(series, options = {}) {
     label.setAttribute('x', pad.left - 12);
     label.setAttribute('y', y + 4);
     label.setAttribute('text-anchor', 'end');
-    label.textContent = String(tick);
+    label.textContent = formatAverageUpAxisTick(tick);
     svg.appendChild(label);
   });
 
@@ -913,11 +999,17 @@ function syncAverageUpNavigator(thumb, state) {
   thumb.style.width = `${Math.max(0, end - start) * 100}%`;
 }
 
+function normalizeAverageUpRange(state) {
+  if (state.start <= AVERAGE_UP_RANGE_EPSILON) state.start = 0;
+  if (1 - state.end <= AVERAGE_UP_RANGE_EPSILON) state.end = 1;
+}
+
 function clampAverageUpRange(state, minRange, maxRange) {
   const range = Math.min(maxRange, Math.max(minRange, state.end - state.start));
   const center = (state.start + state.end) / 2;
   state.start = Math.min(1 - range, Math.max(0, center - range / 2));
   state.end = state.start + range;
+  normalizeAverageUpRange(state);
 }
 
 function applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart) {
@@ -937,7 +1029,8 @@ function createAverageUpCurveTrack(series) {
   title.className = 'average-up-curve-track-title';
   title.textContent = series.label;
 
-  header.append(title, createAverageUpCurveStats(series.points));
+  let statsNode = createAverageUpCurveStats(series.points);
+  header.append(title, statsNode);
 
   const viewport = document.createElement('div');
   viewport.className = 'average-up-curve-viewport';
@@ -966,18 +1059,47 @@ function createAverageUpCurveTrack(series) {
   thumb.append(leftHandle, rightHandle);
   navigator.appendChild(thumb);
 
+  const maxRange = 1;
+  const minRange = Math.min(maxRange, Math.max(0.18, 1 / Math.max(1, series.points.length)));
   const state = {
     start: 0,
     end: 1,
   };
 
-  const maxRange = 1;
-  const minRange = Math.min(maxRange, Math.max(0.18, 1 / Math.max(1, series.points.length)));
+  const resetAverageUpInitialRange = () => {
+    if (series.points.length <= AVERAGE_UP_DEFAULT_VISIBLE_POINTS) {
+      state.start = 0;
+      state.end = 1;
+      return;
+    }
+
+    const firstVisibleDataRatio = (series.points.length - AVERAGE_UP_DEFAULT_VISIBLE_POINTS)
+      / Math.max(1, series.points.length - 1);
+    state.end = 1;
+    state.start = getAverageUpNavigatorRatioForDataRatio(
+      firstVisibleDataRatio,
+      navigator.clientWidth || 860,
+    );
+    if (state.end - state.start < minRange) {
+      state.start = Math.max(0, state.end - minRange);
+    }
+  };
+
+  const renderStats = () => {
+    const dataRange = getAverageUpNavigatorDataRange(state.start, state.end, navigator.clientWidth || 860);
+    const visiblePoints = getAverageUpVisiblePoints(series.points, dataRange.start, dataRange.end);
+    const nextStatsNode = createAverageUpCurveStats(visiblePoints.length ? visiblePoints : series.points);
+    statsNode.replaceWith(nextStatsNode);
+    statsNode = nextStatsNode;
+  };
+
   const renderMainChart = () => {
+    renderStats();
     viewport.replaceChildren(createAverageUpCurveSvg(series, {
       rangeStart: state.start,
       rangeEnd: state.end,
       chartWidth: viewport.clientWidth || 860,
+      navigatorWidth: navigator.clientWidth || 860,
     }));
   };
 
@@ -1055,7 +1177,7 @@ function createAverageUpCurveTrack(series) {
   });
 
   requestAnimationFrame(() => {
-    state.end = maxRange;
+    resetAverageUpInitialRange();
     renderNavigatorChart();
     applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart);
   });
