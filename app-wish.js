@@ -50,6 +50,8 @@ const BANNER_KEY_BY_GACHA_TYPE = {
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const AVERAGE_UP_DEFAULT_VISIBLE_POINTS = 10;
+const AVERAGE_UP_MIN_VISIBLE_POINTS = 5;
+const CHARACTER_AVERAGE_UP_EXPECTED_VALUE = 93.45;
 const AVERAGE_UP_AXIS_PADDING = 20;
 const AVERAGE_UP_RANGE_EPSILON = 0.000001;
 const STORAGE_KEY = 'gachaHistory.uploadedData.v1';
@@ -863,6 +865,14 @@ function getAverageUpNavigatorRatioForDataRatio(dataRatio, navigatorWidth) {
   return Math.min(1, Math.max(0, (pad.left + dataRatio * plotWidth) / width));
 }
 
+function getAverageUpMinimumNavigatorRange(points, navigatorWidth) {
+  if (points.length <= AVERAGE_UP_MIN_VISIBLE_POINTS) return 1;
+
+  const minDataRange = (AVERAGE_UP_MIN_VISIBLE_POINTS - 1) / Math.max(1, points.length - 1);
+  return getAverageUpNavigatorRatioForDataRatio(minDataRange, navigatorWidth)
+    - getAverageUpNavigatorRatioForDataRatio(0, navigatorWidth);
+}
+
 function createAverageUpCurveSvg(series, options = {}) {
   const {
     mini = false,
@@ -877,7 +887,12 @@ function createAverageUpCurveSvg(series, options = {}) {
   const pad = getAverageUpCurvePad(mini);
   const plotWidth = width - pad.left - pad.right;
   const plotHeight = height - pad.top - pad.bottom;
-  const stats = getAverageUpCurveStats(points);
+  const expectedAverage = !mini && Number.isFinite(series.expectedAverage)
+    ? series.expectedAverage
+    : null;
+  const stats = getAverageUpCurveStats(expectedAverage === null
+    ? points
+    : [...points, { average: expectedAverage }]);
   const yMin = Math.max(0, Math.floor((stats.min - AVERAGE_UP_AXIS_PADDING) / 10) * 10);
   const yMax = Math.ceil((stats.max + AVERAGE_UP_AXIS_PADDING) / 10) * 10;
   const yRange = Math.max(1, yMax - yMin);
@@ -957,6 +972,25 @@ function createAverageUpCurveSvg(series, options = {}) {
     label.textContent = formatAverageUpAxisTick(tick);
     svg.appendChild(label);
   });
+
+  if (expectedAverage !== null) {
+    const expectedY = yFor(expectedAverage);
+    const expectedLine = document.createElementNS(svgNs, 'line');
+    expectedLine.setAttribute('class', 'average-up-curve-expected-line');
+    expectedLine.setAttribute('x1', pad.left);
+    expectedLine.setAttribute('x2', width - pad.right);
+    expectedLine.setAttribute('y1', expectedY);
+    expectedLine.setAttribute('y2', expectedY);
+    svg.appendChild(expectedLine);
+
+    const expectedLabel = document.createElementNS(svgNs, 'text');
+    expectedLabel.setAttribute('class', 'average-up-curve-expected-label');
+    expectedLabel.setAttribute('x', width - pad.right - 4);
+    expectedLabel.setAttribute('y', Math.max(pad.top + 12, expectedY - 6));
+    expectedLabel.setAttribute('text-anchor', 'end');
+    expectedLabel.textContent = `期望 ${expectedAverage.toFixed(2)}`;
+    svg.appendChild(expectedLabel);
+  }
 
   const polyline = document.createElementNS(svgNs, 'polyline');
   polyline.setAttribute('class', `average-up-curve-line ${series.className}`);
@@ -1060,7 +1094,10 @@ function createAverageUpCurveTrack(series) {
   navigator.appendChild(thumb);
 
   const maxRange = 1;
-  const minRange = Math.min(maxRange, Math.max(0.18, 1 / Math.max(1, series.points.length)));
+  const getMinRange = () => Math.min(
+    maxRange,
+    getAverageUpMinimumNavigatorRange(series.points, navigator.clientWidth || 860),
+  );
   const state = {
     start: 0,
     end: 1,
@@ -1080,6 +1117,7 @@ function createAverageUpCurveTrack(series) {
       firstVisibleDataRatio,
       navigator.clientWidth || 860,
     );
+    const minRange = getMinRange();
     if (state.end - state.start < minRange) {
       state.start = Math.max(0, state.end - minRange);
     }
@@ -1108,6 +1146,7 @@ function createAverageUpCurveTrack(series) {
       resizeObserver.disconnect();
       return;
     }
+    clampAverageUpRange(state, getMinRange(), maxRange);
     renderMainChart();
     renderNavigatorChart();
     syncAverageUpNavigator(thumb, state);
@@ -1125,10 +1164,11 @@ function createAverageUpCurveTrack(series) {
     const range = state.end - state.start;
     state.start = Math.min(1 - range, Math.max(0, centerRatio - range / 2));
     state.end = state.start + range;
-    applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart);
+    applyAverageUpRange(viewport, thumb, state, getMinRange(), maxRange, renderMainChart);
   };
 
   const resizeRange = (side, ratio) => {
+    const minRange = getMinRange();
     if (side === 'left') {
       state.start = Math.min(state.end - minRange, Math.max(state.end - maxRange, Math.max(0, ratio)));
     } else {
@@ -1179,7 +1219,7 @@ function createAverageUpCurveTrack(series) {
   requestAnimationFrame(() => {
     resetAverageUpInitialRange();
     renderNavigatorChart();
-    applyAverageUpRange(viewport, thumb, state, minRange, maxRange, renderMainChart);
+    applyAverageUpRange(viewport, thumb, state, getMinRange(), maxRange, renderMainChart);
   });
   track.append(header, viewport, navigator);
   return track;
@@ -1259,6 +1299,7 @@ function renderTimeline(data) {
       {
         label: '角色池',
         className: 'average-up-curve-character',
+        expectedAverage: CHARACTER_AVERAGE_UP_EXPECTED_VALUE,
         points: getAverageUpCurvePoints(data.wishData.limitedCharacter.fiveStarHistory || [], '角色池'),
       },
       {

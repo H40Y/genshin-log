@@ -550,6 +550,16 @@ code {
   fill: var(--muted);
   font-size: 12px;
 }
+.average-up-curve-expected-line {
+  stroke: rgba(142, 166, 255, 0.72);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+}
+.average-up-curve-expected-label {
+  fill: #c7d2ff;
+  font-size: 12px;
+  font-weight: 700;
+}
 .average-up-curve-tooltip-value {
   color: var(--text);
   font-size: 14px;
