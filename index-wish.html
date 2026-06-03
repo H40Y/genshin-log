@@ -15,12 +15,23 @@
         </div>
         <div class="topbar-actions">
           <div class="tools-actions card tools-actions-top">
-            <button id="upload-btn" class="ghost-button action-button" type="button">上传 JSON</button>
-            <button id="uigf-btn" class="ghost-button action-button" type="button">导入 UIGF</button>
-            <button id="template-btn" class="ghost-button action-button" type="button">下载模板</button>
-            <button id="export-btn" class="ghost-button action-button" type="button">导出当前数据</button>
-            <button id="sample-btn" class="ghost-button action-button" type="button">加载示例</button>
-            <button id="reset-btn" class="ghost-button action-button danger-button" type="button">清空本地数据</button>
+            <button id="upload-btn" class="ghost-button action-button" type="button">
+              <span class="desktop-action-label">上传 JSON</span>
+              <span class="mobile-action-label">上传</span>
+            </button>
+            <button id="export-btn" class="ghost-button action-button" type="button">
+              <span class="desktop-action-label">导出当前数据</span>
+              <span class="mobile-action-label">导出</span>
+            </button>
+            <div class="mobile-more-actions is-open">
+              <button class="ghost-button action-button mobile-more-trigger" type="button" aria-expanded="false">更多</button>
+              <div class="mobile-more-panel">
+                <button id="uigf-btn" class="ghost-button action-button" type="button">导入 UIGF</button>
+                <button id="template-btn" class="ghost-button action-button" type="button">下载模板</button>
+                <button id="sample-btn" class="ghost-button action-button" type="button">加载示例</button>
+                <button id="reset-btn" class="ghost-button action-button danger-button" type="button">清空本地数据</button>
+              </div>
+            </div>
             <input id="upload-input" type="file" accept="application/json,.json" hidden />
             <input id="uigf-input" type="file" accept="application/json,.json" hidden />
           </div>
@@ -159,6 +170,63 @@
       </article>
     </template>
 
+    <script>
+      (() => {
+        const mediaQuery = window.matchMedia('(max-width: 760px)');
+        const menus = Array.from(document.querySelectorAll('.mobile-more-actions'));
+
+        function syncMobileMoreState() {
+          menus.forEach((menu) => {
+            if (mediaQuery.matches) {
+              menu.classList.remove('is-open');
+            } else {
+              menu.classList.add('is-open');
+            }
+            menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', menu.classList.contains('is-open') ? 'true' : 'false');
+          });
+        }
+
+        function closeMenusOutside(event) {
+          if (!mediaQuery.matches) return;
+          menus.forEach((menu) => {
+            if (menu.classList.contains('is-open') && !menu.contains(event.target)) {
+              menu.classList.remove('is-open');
+              menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', 'false');
+            }
+          });
+        }
+
+        function closeMenu(menu) {
+          menu.classList.remove('is-open');
+          menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', 'false');
+        }
+
+        mediaQuery.addEventListener('change', syncMobileMoreState);
+        menus.forEach((menu) => {
+          menu.querySelector('.mobile-more-trigger')?.addEventListener('click', () => {
+            if (!mediaQuery.matches) return;
+            const open = !menu.classList.contains('is-open');
+            menus.forEach((item) => {
+              closeMenu(item);
+            });
+            menu.classList.toggle('is-open', open);
+            menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', open ? 'true' : 'false');
+          });
+          menu.querySelectorAll('.mobile-more-panel button').forEach((button) => {
+            button.addEventListener('click', () => {
+              if (mediaQuery.matches) closeMenu(menu);
+            });
+          });
+        });
+        document.addEventListener('pointerdown', closeMenusOutside, true);
+        document.addEventListener('click', closeMenusOutside, true);
+        document.addEventListener('keydown', (event) => {
+          if (!mediaQuery.matches || event.key !== 'Escape') return;
+          menus.forEach(closeMenu);
+        });
+        syncMobileMoreState();
+      })();
+    </script>
     <script src="./app-wish.js"></script>
   </body>
 </html>

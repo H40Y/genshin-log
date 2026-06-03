@@ -15,11 +15,20 @@
         </div>
         <div class="topbar-actions">
           <div class="tools-actions card tools-actions-top">
-            <button id="upload-trigger" class="ghost-button action-button" type="button">上传 JSON</button>
-            <button id="download-template" class="ghost-button action-button" type="button">下载模板</button>
-            <button id="download-current" class="ghost-button action-button" type="button">导出当前数据</button>
-            <button id="load-sample" class="ghost-button action-button" type="button">加载示例</button>
-            <button id="clear-local-data" class="ghost-button action-button danger-button" type="button">清空本地数据</button>
+            <button id="upload-trigger" class="ghost-button action-button" type="button">
+              <span class="desktop-action-label">上传 JSON</span>
+              <span class="mobile-action-label">上传</span>
+            </button>
+            <button id="mobile-download-current" class="ghost-button action-button mobile-export-proxy" type="button">导出</button>
+            <div class="mobile-more-actions is-open">
+              <button class="ghost-button action-button mobile-more-trigger" type="button" aria-expanded="false">更多</button>
+              <div class="mobile-more-panel">
+                <button id="download-template" class="ghost-button action-button" type="button">下载模板</button>
+                <button id="download-current" class="ghost-button action-button" type="button">导出当前数据</button>
+                <button id="load-sample" class="ghost-button action-button" type="button">加载示例</button>
+                <button id="clear-local-data" class="ghost-button action-button danger-button" type="button">清空本地数据</button>
+              </div>
+            </div>
           </div>
           <div id="current-file-label" class="current-file-label" aria-live="polite">当前数据：未加载</div>
           <div id="dirty-indicator" class="dirty-indicator" aria-live="polite" hidden>当前数据已修改，尚未导出</div>
@@ -162,6 +171,66 @@
       </div>
     </dialog>
 
+    <script>
+      (() => {
+        const mediaQuery = window.matchMedia('(max-width: 760px)');
+        const menus = Array.from(document.querySelectorAll('.mobile-more-actions'));
+        const mobileExportButton = document.querySelector('#mobile-download-current');
+        const exportButton = document.querySelector('#download-current');
+
+        function syncMobileMoreState() {
+          menus.forEach((menu) => {
+            if (mediaQuery.matches) {
+              menu.classList.remove('is-open');
+            } else {
+              menu.classList.add('is-open');
+            }
+            menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', menu.classList.contains('is-open') ? 'true' : 'false');
+          });
+        }
+
+        function closeMenusOutside(event) {
+          if (!mediaQuery.matches) return;
+          menus.forEach((menu) => {
+            if (menu.classList.contains('is-open') && !menu.contains(event.target)) {
+              menu.classList.remove('is-open');
+              menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', 'false');
+            }
+          });
+        }
+
+        function closeMenu(menu) {
+          menu.classList.remove('is-open');
+          menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', 'false');
+        }
+
+        mediaQuery.addEventListener('change', syncMobileMoreState);
+        menus.forEach((menu) => {
+          menu.querySelector('.mobile-more-trigger')?.addEventListener('click', () => {
+            if (!mediaQuery.matches) return;
+            const open = !menu.classList.contains('is-open');
+            menus.forEach((item) => {
+              closeMenu(item);
+            });
+            menu.classList.toggle('is-open', open);
+            menu.querySelector('.mobile-more-trigger')?.setAttribute('aria-expanded', open ? 'true' : 'false');
+          });
+          menu.querySelectorAll('.mobile-more-panel button').forEach((button) => {
+            button.addEventListener('click', () => {
+              if (mediaQuery.matches) closeMenu(menu);
+            });
+          });
+        });
+        document.addEventListener('pointerdown', closeMenusOutside, true);
+        document.addEventListener('click', closeMenusOutside, true);
+        document.addEventListener('keydown', (event) => {
+          if (!mediaQuery.matches || event.key !== 'Escape') return;
+          menus.forEach(closeMenu);
+        });
+        mobileExportButton?.addEventListener('click', () => exportButton?.click());
+        syncMobileMoreState();
+      })();
+    </script>
     <script src="./app-precious.js"></script>
   </body>
 </html>

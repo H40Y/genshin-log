@@ -18,6 +18,15 @@ body { margin: 0; color: var(--text); background: linear-gradient(180deg, #0a0f1
 .topbar-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .tools-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .tools-actions-top { justify-content: flex-end; }
+.mobile-more-actions, .mobile-more-panel { display: contents; }
+.tools-actions .mobile-more-trigger { display: none; }
+.tools-actions .mobile-export-proxy { display: none; }
+.mobile-action-label { display: none; }
+#upload-trigger { order: 1; }
+#download-template { order: 2; }
+#download-current { order: 3; }
+#load-sample { order: 4; }
+#clear-local-data { order: 5; }
 .current-file-label, .dirty-indicator, .sync-status { font-size: 13px; line-height: 1.5; text-align: right; }
 .current-file-label { color: var(--text); }
 .dirty-indicator { color: var(--warning); }
@@ -121,7 +130,19 @@ body.dialog-open { overflow: hidden; }
   .app-shell { padding: 16px; }
   .topbar, .dialog-header, .dialog-actions, .block-header { flex-direction: column; }
   .topbar-actions { align-items: flex-start; width: 100%; }
-  .tools-actions-top { justify-content: flex-start; }
+  .tools-actions-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; justify-content: flex-start; position: relative; width: 100%; }
+  .tools-actions-top > .action-button, .mobile-more-trigger { min-width: 0; width: 100%; padding-left: 10px; padding-right: 10px; }
+  #upload-trigger { order: 1; }
+  .tools-actions .mobile-export-proxy { display: inline-flex; order: 2; }
+  #download-current { display: none; }
+  .mobile-more-actions { order: 3; }
+  .mobile-more-actions { display: block; position: relative; }
+  .tools-actions .mobile-more-trigger { display: inline-flex; justify-content: center; list-style: none; }
+  .desktop-action-label { display: none; }
+  .mobile-action-label { display: inline; }
+  .mobile-more-panel { display: none; }
+  .mobile-more-actions.is-open .mobile-more-panel { position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; display: grid; gap: 8px; width: min(260px, calc(100vw - 32px)); padding: 10px; border: 1px solid var(--border); border-radius: 14px; background: rgba(21, 27, 47, 0.98); box-shadow: var(--shadow); }
+  .mobile-more-panel .action-button { width: 100%; justify-content: flex-start; }
   .sync-status, .current-file-label, .dirty-indicator { text-align: left; }
   .grid.cards-2, .precious-stat-grid, .form-grid, .inline-fields, .version-picker-editor-row { grid-template-columns: 1fr; }
   .cascade-picker { grid-template-columns: 1fr; }

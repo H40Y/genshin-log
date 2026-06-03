@@ -52,6 +52,22 @@ code {
 .tools-actions-top {
   justify-content: flex-end;
 }
+.mobile-more-actions,
+.mobile-more-panel {
+  display: contents;
+}
+.tools-actions .mobile-more-trigger {
+  display: none;
+}
+.mobile-action-label {
+  display: none;
+}
+#upload-btn { order: 1; }
+#uigf-btn { order: 2; }
+#template-btn { order: 3; }
+#export-btn { order: 4; }
+#sample-btn { order: 5; }
+#reset-btn { order: 6; }
 .current-file-label {
   color: var(--text);
   font-size: 13px;
@@ -892,8 +908,64 @@ body.dialog-open {
   .history-pagination,
   .dialog-header,
   .dialog-actions { flex-direction: column; }
-  .topbar-actions { align-items: flex-start; }
-  .tools-actions-top { justify-content: flex-start; }
+  .topbar-actions {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .tools-actions-top {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    justify-content: flex-start;
+    position: relative;
+    width: 100%;
+  }
+  .tools-actions-top > .action-button,
+  .mobile-more-trigger {
+    min-width: 0;
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  #upload-btn { order: 1; }
+  #export-btn { order: 2; }
+  .mobile-more-actions { order: 3; }
+  .mobile-more-actions {
+    display: block;
+    position: relative;
+  }
+  .tools-actions .mobile-more-trigger {
+    display: inline-flex;
+    justify-content: center;
+    list-style: none;
+  }
+  .desktop-action-label {
+    display: none;
+  }
+  .mobile-action-label {
+    display: inline;
+  }
+  .mobile-more-panel {
+    display: none;
+  }
+  .mobile-more-actions.is-open .mobile-more-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 20;
+    display: grid;
+    gap: 8px;
+    width: min(260px, calc(100vw - 32px));
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(21, 27, 47, 0.98);
+    box-shadow: var(--shadow);
+  }
+  .mobile-more-panel .action-button {
+    width: 100%;
+    justify-content: flex-start;
+  }
   .sync-status,
   .current-file-label,
   .dirty-indicator { text-align: left; }

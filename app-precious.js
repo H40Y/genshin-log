@@ -4,6 +4,7 @@ const uploadInput = document.querySelector('#upload-input');
 const uploadTrigger = document.querySelector('#upload-trigger');
 const downloadTemplateTrigger = document.querySelector('#download-template');
 const downloadCurrentTrigger = document.querySelector('#download-current');
+const mobileDownloadCurrentTrigger = document.querySelector('#mobile-download-current');
 const loadSampleTrigger = document.querySelector('#load-sample');
 const clearLocalDataTrigger = document.querySelector('#clear-local-data');
 const currentFileLabel = document.querySelector('#current-file-label');
@@ -154,6 +155,7 @@ function syncActionButtonHighlight() {
   const hasData = Boolean(baselinePreciousData);
   uploadTrigger?.classList.toggle('is-highlighted', !hasData);
   downloadCurrentTrigger?.classList.toggle('is-highlighted', hasData);
+  mobileDownloadCurrentTrigger?.classList.toggle('is-highlighted', hasData);
 }
 function updateCurrentFileLabel() {
   if (currentFileLabel) currentFileLabel.textContent = `当前数据：${currentPreciousFileName}`;
