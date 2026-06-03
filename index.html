@@ -164,23 +164,77 @@
       }
 
       @media (max-width: 980px) {
+        body {
+          overflow: hidden;
+        }
+
         .unified-app-shell {
+          height: 100dvh;
+          min-height: 0;
           grid-template-columns: 1fr;
+          grid-template-rows: auto minmax(0, 1fr);
         }
 
         .sidebar,
         .sidebar.is-collapsed {
-          position: static;
+          position: relative;
+          z-index: 10;
           width: auto;
           min-height: auto;
-          padding: 16px;
+          padding: 12px 14px 10px;
           border-right: 0;
           border-bottom: 1px solid var(--border);
         }
 
-        .sidebar.is-collapsed .sidebar-title,
+        .sidebar-top,
+        .sidebar-toggle {
+          display: none;
+        }
+
+        .sidebar-nav {
+          gap: 6px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          padding: 4px;
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.03);
+        }
+
+        .sidebar-tab {
+          border-color: transparent;
+          border-radius: 10px;
+          padding: 10px 12px;
+          text-align: center;
+          background: transparent;
+        }
+
+        .sidebar-tab:hover {
+          transform: none;
+        }
+
+        .sidebar-tab-title {
+          font-size: 14px;
+        }
+
+        .sidebar-tab-desc,
         .sidebar.is-collapsed .sidebar-tab-desc {
-          display: block;
+          display: none;
+        }
+
+        .viewer-shell {
+          min-height: 0;
+          overflow: hidden;
+        }
+
+        .viewer-frame {
+          height: 100%;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .sidebar,
+        .sidebar.is-collapsed {
+          padding: 10px 12px;
         }
 
         .sidebar-nav {
@@ -188,13 +242,7 @@
         }
 
         .viewer-frame {
-          height: calc(100vh - 196px);
-        }
-      }
-
-      @media (max-width: 640px) {
-        .sidebar-nav {
-          grid-template-columns: 1fr;
+          height: 100%;
         }
       }
     </style>
