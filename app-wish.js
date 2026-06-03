@@ -17,10 +17,12 @@ const dirtyIndicator = document.querySelector('#dirty-indicator');
 const editDialog = document.querySelector('#edit-dialog');
 const editForm = document.querySelector('#edit-form');
 const editCancelBtn = document.querySelector('#edit-cancel');
+const editCancelMobileBtn = document.querySelector('#edit-cancel-mobile');
 const editDeleteBtn = document.querySelector('#edit-delete');
 const totalPullsDialog = document.querySelector('#total-pulls-dialog');
 const totalPullsForm = document.querySelector('#total-pulls-form');
 const totalPullsCancelBtn = document.querySelector('#total-pulls-cancel');
+const totalPullsCancelMobileBtn = document.querySelector('#total-pulls-cancel-mobile');
 const totalPullsInput = document.querySelector('#total-pulls-input');
 const totalPullsLabel = document.querySelector('#total-pulls-label');
 const uigfReviewDialog = document.querySelector('#uigf-review-dialog');
@@ -2463,9 +2465,17 @@ editCancelBtn?.addEventListener('click', () => {
   closeEditDialog();
 });
 
+editCancelMobileBtn?.addEventListener('click', () => {
+  closeEditDialog();
+});
+
 editDialog?.addEventListener('close', syncBodyDialogState);
 
 totalPullsCancelBtn?.addEventListener('click', () => {
+  closeTotalPullsDialog();
+});
+
+totalPullsCancelMobileBtn?.addEventListener('click', () => {
   closeTotalPullsDialog();
 });
 
