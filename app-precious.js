@@ -121,6 +121,7 @@ let activeVersionPickerTarget = null;
 let versionPickerMode = 'select';
 let draftIncomeVersionEntries = [];
 let preciousExpensePageByMaterial = {};
+let preciousMobilePanelByMaterial = {};
 const PRECIOUS_EXPENSE_PAGE_SIZE = 15;
 
 function fmt(n) { return new Intl.NumberFormat('zh-CN').format(n ?? 0); }
@@ -492,6 +493,28 @@ function createBlockHeader(title, summary, addTitle, onAdd) {
   const right = document.createElement('div'); if (onAdd) right.appendChild(createIconButton(addTitle, onAdd));
   header.append(left, right); return header;
 }
+function createMaterialTabs(materialKey, activePanel, counts) {
+  const tabs = document.createElement('div');
+  tabs.className = 'precious-material-tabs';
+  tabs.setAttribute('role', 'tablist');
+  [
+    ['income', '收入', counts.income],
+    ['expense', '支出', counts.expense],
+  ].forEach(([panel, label, count]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = activePanel === panel ? 'precious-material-tab is-active' : 'precious-material-tab';
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', activePanel === panel ? 'true' : 'false');
+    button.textContent = `${label} ${fmt(count)}`;
+    button.addEventListener('click', () => {
+      preciousMobilePanelByMaterial[materialKey] = panel;
+      rerenderPrecious();
+    });
+    tabs.appendChild(button);
+  });
+  return tabs;
+}
 function buildPreciousStatCard(materialKey) {
   const node = document.createElement('article'); node.className = 'card precious-stat-card';
   const summary = summarizeMaterial(materialKey);
@@ -626,10 +649,20 @@ function buildPreciousMaterialBlock(materialKey) {
   const incomeAmount = material.versionIncomeRecords.reduce((sum, record) => sum + record.entries.reduce((inner, entry) => inner + (Number(entry.amount) || 0), 0), 0)
     + material.otherIncomes.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   const expenseAmount = material.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const activePanel = preciousMobilePanelByMaterial[materialKey] || 'income';
   const block = document.createElement('article'); block.className = 'card precious-material-block';
   block.appendChild(createBlockHeader(getMaterialLabel(materialKey)));
+  block.appendChild(createMaterialTabs(materialKey, activePanel, { income: incomeAmount, expense: expenseAmount }));
   const grid = document.createElement('div'); grid.className = 'grid cards-2 precious-material-grid';
-  grid.appendChild(buildPreciousIncomeSubBlock(materialKey)); grid.appendChild(buildPreciousExpenseSubBlock(materialKey)); block.appendChild(grid); return block;
+  const incomeBlock = buildPreciousIncomeSubBlock(materialKey);
+  incomeBlock.classList.add('precious-material-panel');
+  incomeBlock.dataset.panel = 'income';
+  incomeBlock.hidden = activePanel !== 'income';
+  const expenseBlock = buildPreciousExpenseSubBlock(materialKey);
+  expenseBlock.classList.add('precious-material-panel');
+  expenseBlock.dataset.panel = 'expense';
+  expenseBlock.hidden = activePanel !== 'expense';
+  grid.appendChild(incomeBlock); grid.appendChild(expenseBlock); block.appendChild(grid); return block;
 }
 function getVersionDisplayText(selectionState) { const version = getVersionMap().get(selectionState?.versionId); return version ? version.label : '请选择版本'; }
 function syncVersionTriggerText() { if (preciousExpenseVersionTriggerText) preciousExpenseVersionTriggerText.textContent = getVersionDisplayText(preciousExpenseSelection); }
@@ -997,6 +1030,7 @@ uploadInput?.addEventListener('change', async () => {
 });
 
 preciousVersionCancelBtn?.addEventListener('click', closePreciousVersionDialog);
+document.querySelector('[data-dialog-cancel="version"]')?.addEventListener('click', closePreciousVersionDialog);
 preciousVersionDialog?.addEventListener('close', syncBodyDialogState);
 preciousVersionDeleteBtn?.addEventListener('click', () => {
   if (!window.confirm('确定删除这个版本分组吗？')) return;
@@ -1010,6 +1044,7 @@ preciousVersionForm?.addEventListener('submit', (event) => {
 });
 
 preciousIncomeCancelBtn?.addEventListener('click', closePreciousIncomeDialog);
+document.querySelector('[data-dialog-cancel="income"]')?.addEventListener('click', closePreciousIncomeDialog);
 preciousIncomeDialog?.addEventListener('close', syncBodyDialogState);
 preciousIncomeMaterialInput?.addEventListener('change', syncIncomeDialogFields);
 preciousIncomeSourceInput?.addEventListener('change', syncIncomeDialogFields);
@@ -1029,6 +1064,7 @@ versionPickerEditorSave?.addEventListener('click', () => {
 });
 
 preciousExpenseCancelBtn?.addEventListener('click', closePreciousExpenseDialog);
+document.querySelector('[data-dialog-cancel="expense"]')?.addEventListener('click', closePreciousExpenseDialog);
 preciousExpenseDialog?.addEventListener('close', syncBodyDialogState);
 preciousExpenseMaterialInput?.addEventListener('change', () => { syncExpenseAmountBySelection(); syncExpenseSetNameInput(); });
 preciousExpenseSlotInput?.addEventListener('change', () => { refreshExpenseMainStatOptions(preciousExpenseSlotInput.value); syncExpenseAmountBySelection(); });

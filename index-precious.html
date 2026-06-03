@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>贵重资源</title>
-    <link rel="stylesheet" href="./styles-precious.css" />
+    <link rel="stylesheet" href="./styles-precious.css?v=mobile-20260603" />
   </head>
   <body>
     <div class="app-shell">
@@ -60,7 +60,8 @@
           </label>
         </div>
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" id="precious-version-delete">删除</button>
+          <button type="button" class="ghost-button mobile-dialog-cancel" data-dialog-cancel="version">取消</button>
+          <button type="button" class="ghost-button danger-button" id="precious-version-delete">删除</button>
           <button type="submit" class="primary-button">保存</button>
         </div>
       </form>
@@ -91,7 +92,8 @@
           </label>
         </div>
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" id="precious-income-delete">删除</button>
+          <button type="button" class="ghost-button mobile-dialog-cancel" data-dialog-cancel="income">取消</button>
+          <button type="button" class="ghost-button danger-button" id="precious-income-delete">删除</button>
           <button type="submit" class="primary-button">保存</button>
         </div>
       </form>
@@ -139,7 +141,8 @@
           </label>
         </div>
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" id="precious-expense-delete">删除</button>
+          <button type="button" class="ghost-button mobile-dialog-cancel" data-dialog-cancel="expense">取消</button>
+          <button type="button" class="ghost-button danger-button" id="precious-expense-delete">删除</button>
           <button type="submit" class="primary-button">保存</button>
         </div>
       </form>
@@ -231,6 +234,6 @@
         syncMobileMoreState();
       })();
     </script>
-    <script src="./app-precious.js"></script>
+    <script src="./app-precious.js?v=mobile-20260603"></script>
   </body>
 </html>
