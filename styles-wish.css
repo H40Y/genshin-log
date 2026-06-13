@@ -976,9 +976,6 @@ body.dialog-open {
   .history-card { padding-top: 16px; }
   .section-corner-button { top: 14px; right: 14px; }
   .history-header { padding-right: 42px; }
-  .timeline-version-bars {
-    min-height: 180px;
-  }
   .grid.cards-4,
   .grid.cards-3,
   .banner-grid,
