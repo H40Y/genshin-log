@@ -5,7 +5,7 @@
 ## 适用页面
 
 - 页面文件：`index-wish.html`
-- 脚本文件：`app-wish.js`
+- 脚本目录：`assets/js/wish/`（导入导出逻辑位于 `import-export.js`）
 - 当前支持格式版本：`schemaVersion: 4`
 - 模板导出文件名：`wish-data.schema-v4.template.json`
 - 当前数据导出文件名：`wish-data.schema-v4.export.json`

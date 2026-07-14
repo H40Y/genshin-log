@@ -5,7 +5,7 @@
 ## 适用页面
 
 - 页面文件：`index-precious.html`
-- 脚本文件：`app-precious.js`
+- 脚本目录：`assets/js/precious/`（数据逻辑位于 `core.js`）
 - 当前支持格式版本：`schemaVersion: 1`
 - 模板导出文件名：`precious-resources.schema-v1.template.json`
 - 当前数据导出文件名：`precious-resources.schema-v1.export.json`

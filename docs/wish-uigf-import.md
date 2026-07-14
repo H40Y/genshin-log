@@ -5,7 +5,7 @@
 ## 适用页面
 
 - 页面文件：`index-wish.html`
-- 脚本文件：`app-wish.js`
+- 脚本目录：`assets/js/wish/`（UIGF 逻辑位于 `import-export.js`）
 - 入口按钮：“导入 UIGF”
 - 前置数据：必须先加载 `schemaVersion: 4` 的抽卡记录主 JSON
 
