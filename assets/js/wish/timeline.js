@@ -344,32 +344,58 @@ function getAverageUpCurvePad(mini) {
     : { top: 18, right: 16, bottom: 18, left: 36 };
 }
 
-function getAverageUpNavigatorDataRange(rangeStart, rangeEnd, navigatorWidth) {
-  const width = Math.max(360, Math.round(navigatorWidth || 860));
+function getAverageUpNavigatorLayout(navigatorWidth, navigatorHeight) {
+  const width = Math.max(1, Math.round(navigatorWidth || 860));
+  const height = Math.max(1, Math.round(navigatorHeight || 52));
+  const viewBoxWidth = Math.max(360, width);
+  const viewBoxHeight = 54;
   const pad = getAverageUpCurvePad(true);
-  const plotWidth = Math.max(1, width - pad.left - pad.right);
-  const startPx = Math.min(rangeStart, rangeEnd) * width;
-  const endPx = Math.max(rangeStart, rangeEnd) * width;
+  const scale = Math.min(width / viewBoxWidth, height / viewBoxHeight);
+  const renderedWidth = viewBoxWidth * scale;
+  const offsetX = (width - renderedWidth) / 2;
 
   return {
-    start: (startPx - pad.left) / plotWidth,
-    end: (endPx - pad.left) / plotWidth,
+    width,
+    scale,
+    plotStart: offsetX + pad.left * scale,
+    plotWidth: Math.max(1, (viewBoxWidth - pad.left - pad.right) * scale),
   };
 }
 
-function getAverageUpNavigatorRatioForDataRatio(dataRatio, navigatorWidth) {
-  const width = Math.max(360, Math.round(navigatorWidth || 860));
-  const pad = getAverageUpCurvePad(true);
-  const plotWidth = Math.max(1, width - pad.left - pad.right);
-  return Math.min(1, Math.max(0, (pad.left + dataRatio * plotWidth) / width));
+function getAverageUpNavigatorRanges(rangeStart, rangeEnd, navigatorWidth, navigatorHeight) {
+  const layout = getAverageUpNavigatorLayout(navigatorWidth, navigatorHeight);
+  const startPx = Math.min(rangeStart, rangeEnd) * layout.width;
+  const endPx = Math.max(rangeStart, rangeEnd) * layout.width;
+  const dataRange = {
+    start: (startPx - layout.plotStart) / layout.plotWidth,
+    end: (endPx - layout.plotStart) / layout.plotWidth,
+  };
+  const markerRadius = 2.5;
+  const markerStrokeHalfWidth = 1;
+  const markerOverlap = (markerRadius + markerStrokeHalfWidth) * layout.scale / layout.plotWidth;
+
+  return {
+    dataRange,
+    renderRange: {
+      start: dataRange.start - markerOverlap,
+      end: dataRange.end + markerOverlap,
+    },
+  };
 }
 
-function getAverageUpMinimumNavigatorRange(points, navigatorWidth) {
+function getAverageUpNavigatorRatioForDataRatio(dataRatio, navigatorWidth, navigatorHeight) {
+  const layout = getAverageUpNavigatorLayout(navigatorWidth, navigatorHeight);
+  return Math.min(1, Math.max(0, (
+    layout.plotStart + dataRatio * layout.plotWidth
+  ) / layout.width));
+}
+
+function getAverageUpMinimumNavigatorRange(points, navigatorWidth, navigatorHeight) {
   if (points.length <= AVERAGE_UP_MIN_VISIBLE_POINTS) return 1;
 
+  const layout = getAverageUpNavigatorLayout(navigatorWidth, navigatorHeight);
   const minDataRange = (AVERAGE_UP_MIN_VISIBLE_POINTS - 1) / Math.max(1, points.length - 1);
-  return getAverageUpNavigatorRatioForDataRatio(minDataRange, navigatorWidth)
-    - getAverageUpNavigatorRatioForDataRatio(0, navigatorWidth);
+  return minDataRange * layout.plotWidth / layout.width;
 }
 
 function createAverageUpCurveSvg(series, options = {}) {
@@ -379,6 +405,7 @@ function createAverageUpCurveSvg(series, options = {}) {
     rangeEnd = 1,
     chartWidth = 860,
     navigatorWidth = chartWidth,
+    navigatorHeight = 52,
   } = options;
   const points = series.points;
   const width = Math.max(360, Math.round(chartWidth));
@@ -395,9 +422,11 @@ function createAverageUpCurveSvg(series, options = {}) {
   const yMin = Math.max(0, Math.floor((stats.min - AVERAGE_UP_AXIS_PADDING) / 10) * 10);
   const yMax = Math.ceil((stats.max + AVERAGE_UP_AXIS_PADDING) / 10) * 10;
   const yRange = Math.max(1, yMax - yMin);
-  const dataRange = mini
-    ? { start: 0, end: 1 }
-    : getAverageUpNavigatorDataRange(rangeStart, rangeEnd, navigatorWidth);
+  const navigatorRanges = mini
+    ? null
+    : getAverageUpNavigatorRanges(rangeStart, rangeEnd, navigatorWidth, navigatorHeight);
+  const dataRange = navigatorRanges?.dataRange || { start: 0, end: 1 };
+  const renderRange = navigatorRanges?.renderRange || dataRange;
   const xFor = (index) => {
     if (points.length <= 1) return pad.left + plotWidth / 2;
     const ratio = getAverageUpPointRatio(points, index);
@@ -405,9 +434,13 @@ function createAverageUpCurveSvg(series, options = {}) {
     const end = dataRange.end;
     return pad.left + ((ratio - start) / Math.max(0.01, end - start)) * plotWidth;
   };
+  const renderXFor = (index) => {
+    const x = xFor(index);
+    return mini ? x : Math.min(width - pad.right, Math.max(pad.left, x));
+  };
   const yFor = (value) => pad.top + plotHeight - ((value - yMin) / yRange) * plotHeight;
   const yTicks = mini ? [] : [...new Set([yMin, (yMin + yMax) / 2, yMax])];
-  const visiblePoints = mini ? points : getAverageUpVisiblePoints(points, dataRange.start, dataRange.end);
+  const visiblePoints = mini ? points : getAverageUpVisiblePoints(points, renderRange.start, renderRange.end);
   const averageAtRatio = (ratio) => {
     if (points.length <= 1) return points[0]?.average ?? 0;
 
@@ -424,19 +457,19 @@ function createAverageUpCurveSvg(series, options = {}) {
   const linePoints = (() => {
     if (mini || points.length <= 1) return visiblePoints;
 
-    const clampedStart = Math.max(0, dataRange.start);
-    const clampedEnd = Math.min(1, dataRange.end);
+    const clampedStart = Math.max(0, renderRange.start);
+    const clampedEnd = Math.min(1, renderRange.end);
     if (clampedStart > clampedEnd) return [];
 
     const line = [];
-    if (dataRange.start > 0) {
+    if (renderRange.start > 0) {
       line.push({
         index: 1 + clampedStart * (points.length - 1),
         average: averageAtRatio(clampedStart),
       });
     }
     line.push(...visiblePoints);
-    if (dataRange.end < 1) {
+    if (renderRange.end < 1) {
       line.push({
         index: 1 + clampedEnd * (points.length - 1),
         average: averageAtRatio(clampedEnd),
@@ -495,12 +528,12 @@ function createAverageUpCurveSvg(series, options = {}) {
   polyline.setAttribute('class', `average-up-curve-line ${series.className}`);
   polyline.setAttribute(
     'points',
-    linePoints.map((point) => `${xFor(point.index)},${yFor(point.average)}`).join(' '),
+    linePoints.map((point) => `${renderXFor(point.index)},${yFor(point.average)}`).join(' '),
   );
   svg.appendChild(polyline);
 
   visiblePoints.forEach((point) => {
-    const cx = xFor(point.index);
+    const cx = renderXFor(point.index);
     const cy = yFor(point.average);
     const circle = document.createElementNS(svgNs, 'circle');
     circle.setAttribute('class', `average-up-curve-point ${series.className}`);
@@ -595,7 +628,11 @@ function createAverageUpCurveTrack(series) {
   const maxRange = 1;
   const getMinRange = () => Math.min(
     maxRange,
-    getAverageUpMinimumNavigatorRange(series.points, navigator.clientWidth || 860),
+    getAverageUpMinimumNavigatorRange(
+      series.points,
+      navigator.clientWidth || 860,
+      navigator.clientHeight || 52,
+    ),
   );
   const state = {
     start: 0,
@@ -615,6 +652,7 @@ function createAverageUpCurveTrack(series) {
     state.start = getAverageUpNavigatorRatioForDataRatio(
       firstVisibleDataRatio,
       navigator.clientWidth || 860,
+      navigator.clientHeight || 52,
     );
     const minRange = getMinRange();
     if (state.end - state.start < minRange) {
@@ -623,8 +661,13 @@ function createAverageUpCurveTrack(series) {
   };
 
   const renderStats = () => {
-    const dataRange = getAverageUpNavigatorDataRange(state.start, state.end, navigator.clientWidth || 860);
-    const visiblePoints = getAverageUpVisiblePoints(series.points, dataRange.start, dataRange.end);
+    const { renderRange } = getAverageUpNavigatorRanges(
+      state.start,
+      state.end,
+      navigator.clientWidth || 860,
+      navigator.clientHeight || 52,
+    );
+    const visiblePoints = getAverageUpVisiblePoints(series.points, renderRange.start, renderRange.end);
     const nextStatsNode = createAverageUpCurveStats(visiblePoints.length ? visiblePoints : series.points);
     statsNode.replaceWith(nextStatsNode);
     statsNode = nextStatsNode;
@@ -637,6 +680,7 @@ function createAverageUpCurveTrack(series) {
       rangeEnd: state.end,
       chartWidth: viewport.clientWidth || 860,
       navigatorWidth: navigator.clientWidth || 860,
+      navigatorHeight: navigator.clientHeight || 52,
     }));
   };
 
@@ -812,4 +856,3 @@ function renderTimeline(data) {
   timelineSection.appendChild(shell);
   stabilizeTimelineRender();
 }
-
