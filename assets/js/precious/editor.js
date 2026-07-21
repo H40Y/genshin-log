@@ -315,7 +315,15 @@ function savePreciousExpense() {
 
   if (preciousExpenseEditing.mode === 'create') getPreciousMaterialData(input.materialKey).expenses.push({ id: buildPreciousRecordId('precious-expense'), ...input });
   else {
-    const oldList = getPreciousMaterialData(preciousExpenseEditing.materialKey).expenses; const index = oldList.findIndex((item) => item.id === preciousExpenseEditing.recordId); if (index < 0) throw new Error('未找到要修改的支出记录。'); const previous = oldList[index]; oldList.splice(index, 1); getPreciousMaterialData(input.materialKey).expenses.push({ ...previous, ...input });
+    const oldList = getPreciousMaterialData(preciousExpenseEditing.materialKey).expenses;
+    const index = oldList.findIndex((item) => item.id === preciousExpenseEditing.recordId);
+    if (index < 0) throw new Error('未找到要修改的支出记录。');
+    const updatedExpense = { ...oldList[index], ...input };
+    if (input.materialKey === preciousExpenseEditing.materialKey) oldList.splice(index, 1, updatedExpense);
+    else {
+      oldList.splice(index, 1);
+      getPreciousMaterialData(input.materialKey).expenses.push(updatedExpense);
+    }
   }
   const expenseSetOptions = getPreciousMaterialData(input.materialKey).expenseSetOptions || [];
   if (!expenseSetOptions.includes(input.setName)) {
