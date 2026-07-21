@@ -723,28 +723,32 @@ function createAverageUpCurveTrack(series) {
   const startDrag = (event, mode) => {
     event.preventDefault();
     const dragTarget = event.currentTarget;
+    const pointerRatio = ratioFromClientX(event.clientX);
+    const grabOffset = mode === 'move'
+      ? pointerRatio - (state.start + state.end) / 2
+      : 0;
     dragTarget.setPointerCapture(event.pointerId);
-    if (mode === 'move') {
-      moveRangeTo(ratioFromClientX(event.clientX));
-    } else {
-      resizeRange(mode, ratioFromClientX(event.clientX));
-    }
+    if (mode !== 'move') resizeRange(mode, pointerRatio);
 
     const onPointerMove = (moveEvent) => {
       if (mode === 'move') {
-        moveRangeTo(ratioFromClientX(moveEvent.clientX));
+        moveRangeTo(ratioFromClientX(moveEvent.clientX) - grabOffset);
       } else {
         resizeRange(mode, ratioFromClientX(moveEvent.clientX));
       }
     };
-    const onPointerUp = (upEvent) => {
-      dragTarget.releasePointerCapture(upEvent.pointerId);
+    const stopDrag = (endEvent) => {
+      if (dragTarget.hasPointerCapture(endEvent.pointerId)) {
+        dragTarget.releasePointerCapture(endEvent.pointerId);
+      }
       dragTarget.removeEventListener('pointermove', onPointerMove);
-      dragTarget.removeEventListener('pointerup', onPointerUp);
+      dragTarget.removeEventListener('pointerup', stopDrag);
+      dragTarget.removeEventListener('pointercancel', stopDrag);
     };
 
     dragTarget.addEventListener('pointermove', onPointerMove);
-    dragTarget.addEventListener('pointerup', onPointerUp);
+    dragTarget.addEventListener('pointerup', stopDrag);
+    dragTarget.addEventListener('pointercancel', stopDrag);
   };
 
   leftHandle.addEventListener('pointerdown', (event) => startDrag(event, 'left'));
