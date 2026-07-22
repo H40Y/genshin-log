@@ -87,6 +87,9 @@ body { margin: 0; color: var(--text); background: linear-gradient(180deg, #0a0f1
 .table-wrap { overflow: auto; }
 .pagination-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.income-table { table-layout: fixed; }
+.income-col-cycle, .income-col-note { width: 33.333%; }
+.income-col-amount, .income-col-action { width: 16.667%; }
 th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: rgba(21,27,47,0.98); }
 tbody tr:hover { background: rgba(255,255,255,0.03); }

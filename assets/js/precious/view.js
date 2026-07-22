@@ -161,7 +161,7 @@ function buildPreciousIncomeSubBlock(materialKey) {
     const groupAmount = group.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     const title = document.createElement('div'); title.className = 'nested-group-title'; title.textContent = `${group.title} · ${fmt(groupAmount)} 个`; section.appendChild(title);
     const tableWrap = document.createElement('div'); tableWrap.className = 'table-wrap';
-    const table = document.createElement('table'); table.innerHTML = '<thead><tr><th>周期</th><th>数量</th><th>备注</th><th>操作</th></tr></thead>';
+    const table = document.createElement('table'); table.className = 'income-table'; table.innerHTML = '<colgroup><col class="income-col-cycle"><col class="income-col-amount"><col class="income-col-note"><col class="income-col-action"></colgroup><thead><tr><th>周期</th><th>数量</th><th>备注</th><th>操作</th></tr></thead>';
     const tbody = document.createElement('tbody');
     group.items.forEach((item) => {
       const tr = document.createElement('tr');

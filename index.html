@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>原神记录站</title>
     <style>
       :root {
@@ -271,7 +274,7 @@
       </aside>
 
       <main class="viewer-shell">
-        <iframe id="page-frame" class="viewer-frame" title="原神记录站页面" src="./index-wish.html"></iframe>
+        <iframe id="page-frame" class="viewer-frame" title="原神记录站页面"></iframe>
       </main>
     </div>
 
@@ -281,6 +284,7 @@
         const frame = document.querySelector('#page-frame');
         const sidebar = document.querySelector('#sidebar');
         const toggle = document.querySelector('#sidebar-toggle');
+        let currentPage = '';
 
         function switchPage(src) {
           tabs.forEach((tab) => {
@@ -288,8 +292,9 @@
             tab.classList.toggle('is-active', active);
             tab.setAttribute('aria-pressed', active ? 'true' : 'false');
           });
-          if (frame && frame.getAttribute('src') !== src) {
-            frame.setAttribute('src', src);
+          if (frame && currentPage !== src) {
+            currentPage = src;
+            frame.setAttribute('src', `${src}?v=${Date.now()}`);
           }
         }
 

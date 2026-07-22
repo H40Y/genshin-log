@@ -3,8 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>抽卡记录</title>
-    <link rel="stylesheet" href="./assets/css/wish.css" />
+    <script>
+      document.write(`<link rel="stylesheet" href="./assets/css/wish.css?v=${Date.now()}" />`);
+    </script>
   </head>
   <body>
     <div class="app-shell">
@@ -226,12 +231,12 @@
         syncMobileMoreState();
       })();
     </script>
-    <script src="./assets/js/wish/core.js"></script>
-    <script src="./assets/js/wish/dashboard.js"></script>
-    <script src="./assets/js/wish/timeline.js"></script>
-    <script src="./assets/js/wish/history.js"></script>
-    <script src="./assets/js/wish/editor.js"></script>
-    <script src="./assets/js/wish/import-export.js"></script>
-    <script src="./assets/js/wish/app.js"></script>
+    <script>
+      (() => {
+        const assetVersion = Date.now();
+        const scripts = ['core', 'dashboard', 'timeline', 'history', 'editor', 'import-export', 'app'];
+        document.write(scripts.map((name) => `<script src="./assets/js/wish/${name}.js?v=${assetVersion}"><\/script>`).join(''));
+      })();
+    </script>
   </body>
 </html>
