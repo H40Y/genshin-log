@@ -13,6 +13,12 @@
 
 两个子页面都支持 JSON 导入导出，并会把当前数据暂存在浏览器 `localStorage` 中。刷新页面通常不会丢失当前数据，但长期备份仍应以“导出当前数据”生成的 JSON 文件为准。
 
+## GitHub Pages 发布
+
+仓库保持从 `main` 分支根目录发布，由 GitHub 的 `pages-build-deployment` 在推送后自动部署，无需切换为自定义 GitHub Actions。
+
+iframe、CSS 和 JavaScript 使用固定的 `?v=` 版本号以利用浏览器和 CDN 缓存。修改相关页面或静态资源后，应同步更新对应 HTML 中的版本号，避免浏览器继续使用旧文件。
+
 ## 抽卡记录页
 
 抽卡记录页用于维护三个池子的抽卡情况：

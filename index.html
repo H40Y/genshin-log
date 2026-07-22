@@ -3,9 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <title>原神记录站</title>
     <style>
       :root {
@@ -284,6 +281,7 @@
         const frame = document.querySelector('#page-frame');
         const sidebar = document.querySelector('#sidebar');
         const toggle = document.querySelector('#sidebar-toggle');
+        const pageVersion = '20260722-2';
         let currentPage = '';
 
         function switchPage(src) {
@@ -294,7 +292,7 @@
           });
           if (frame && currentPage !== src) {
             currentPage = src;
-            frame.setAttribute('src', `${src}?v=${Date.now()}`);
+            frame.setAttribute('src', `${src}?v=${pageVersion}`);
           }
         }
 

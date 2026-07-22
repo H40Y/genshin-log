@@ -3,12 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <title>贵重资源</title>
     <script>
-      document.write(`<link rel="stylesheet" href="./assets/css/precious.css?v=${Date.now()}" />`);
+      const preciousAssetVersion = '20260722-2';
+      document.write(`<link rel="stylesheet" href="./assets/css/precious.css?v=${preciousAssetVersion}" />`);
     </script>
   </head>
   <body>
@@ -237,9 +235,8 @@
     </script>
     <script>
       (() => {
-        const assetVersion = Date.now();
         const scripts = ['core', 'view', 'editor', 'app'];
-        document.write(scripts.map((name) => `<script src="./assets/js/precious/${name}.js?v=${assetVersion}"><\/script>`).join(''));
+        document.write(scripts.map((name) => `<script src="./assets/js/precious/${name}.js?v=${preciousAssetVersion}"><\/script>`).join(''));
       })();
     </script>
   </body>
