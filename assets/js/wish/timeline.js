@@ -24,10 +24,21 @@ function getUpEvents(history) {
 
     if (item.resultType !== 'up') return;
 
+    const cost = item.pullIndex - previousUpPullIndex;
+    const offBannerCost = lastOffBannerItem
+      ? lastOffBannerItem.pullIndex - previousUpPullIndex
+      : 0;
+
     events.push({
       item,
-      cost: item.pullIndex - previousUpPullIndex,
-      precedingOffBannerName: lastOffBannerItem?.itemName ?? null,
+      cost,
+      upCost: cost - offBannerCost,
+      precedingOffBanner: lastOffBannerItem
+        ? {
+            item: lastOffBannerItem,
+            cost: offBannerCost,
+          }
+        : null,
       capturingRadiance: item.capturingRadiance === true,
     });
 
@@ -81,22 +92,21 @@ function groupUpEventsByVersion(events) {
   return [...grouped.values()].sort((a, b) => compareVersionGroup(a.versionGroup, b.versionGroup));
 }
 
-function showTimelineTooltip(event, timelineEvent, typeLabel) {
+function showTimelineTooltip(event, timelineEvent, segmentType) {
   if (!timelineTooltip) return;
 
-  const tags = [];
-  if (timelineEvent.precedingOffBannerName) {
-    tags.push(`歪 ${timelineEvent.precedingOffBannerName}`);
-  }
-  if (timelineEvent.capturingRadiance) {
-    tags.push('捕获明光');
-  }
+  const isOffBannerSegment = segmentType === 'off-banner';
+  const segmentItem = isOffBannerSegment
+    ? timelineEvent.precedingOffBanner?.item
+    : timelineEvent.item;
+  const segmentCost = isOffBannerSegment
+    ? timelineEvent.precedingOffBanner?.cost
+    : timelineEvent.upCost;
+  if (!segmentItem) return;
 
   timelineTooltip.innerHTML = `
-    <div class="timeline-tooltip-title">${timelineEvent.item.itemName}</div>
-    <div class="timeline-tooltip-line">${typeLabel}｜${formatTimelineVersionLabel(timelineEvent.item.pullVersion)}</div>
-    <div class="timeline-tooltip-line">花费 ${timelineEvent.cost} 抽</div>
-    ${tags.length ? `<div class="timeline-tooltip-tags">${tags.map((tag) => `<span class="timeline-tooltip-tag">${tag}</span>`).join('')}</div>` : ''}
+    <div class="timeline-tooltip-title">${segmentItem.itemName}</div>
+    <div class="timeline-tooltip-line">${formatTimelineVersionLabel(segmentItem.pullVersion)} ｜ ${segmentCost} 抽</div>
   `;
 
   timelineTooltip.hidden = false;
@@ -126,7 +136,7 @@ function hideTimelineTooltip() {
   timelineTooltip.hidden = true;
 }
 
-function createTimelineBar(eventData, maxCost, typeLabel, options = {}) {
+function createTimelineBar(eventData, maxCost, options = {}) {
   const { hideValue = false } = options;
 
   const barWrap = document.createElement('div');
@@ -140,7 +150,23 @@ function createTimelineBar(eventData, maxCost, typeLabel, options = {}) {
   const height = maxCost > 0 ? Math.max(12, (eventData.cost / maxCost) * 180) : 12;
   bar.style.height = `${height}px`;
 
-  if (eventData.precedingOffBannerName) {
+  const upSegment = document.createElement('div');
+  upSegment.className = 'timeline-bar-segment timeline-bar-segment-up';
+  upSegment.style.flexGrow = String(eventData.upCost);
+  upSegment.addEventListener('mouseenter', (domEvent) => showTimelineTooltip(domEvent, eventData, 'up'));
+  upSegment.addEventListener('mousemove', moveTimelineTooltip);
+  upSegment.addEventListener('mouseleave', hideTimelineTooltip);
+  bar.appendChild(upSegment);
+
+  if (eventData.precedingOffBanner) {
+    const offBannerSegment = document.createElement('div');
+    offBannerSegment.className = 'timeline-bar-segment timeline-bar-segment-off-banner';
+    offBannerSegment.style.flexGrow = String(eventData.precedingOffBanner.cost);
+    offBannerSegment.addEventListener('mouseenter', (domEvent) => showTimelineTooltip(domEvent, eventData, 'off-banner'));
+    offBannerSegment.addEventListener('mousemove', moveTimelineTooltip);
+    offBannerSegment.addEventListener('mouseleave', hideTimelineTooltip);
+    bar.appendChild(offBannerSegment);
+
     const marker = document.createElement('span');
     marker.className = 'timeline-bar-marker timeline-bar-marker-off-banner';
     marker.textContent = '歪';
@@ -155,9 +181,6 @@ function createTimelineBar(eventData, maxCost, typeLabel, options = {}) {
   }
 
   barOuter.appendChild(bar);
-  barOuter.addEventListener('mouseenter', (domEvent) => showTimelineTooltip(domEvent, eventData, typeLabel));
-  barOuter.addEventListener('mousemove', moveTimelineTooltip);
-  barOuter.addEventListener('mouseleave', hideTimelineTooltip);
 
   const value = document.createElement('div');
   value.className = hideValue ? 'timeline-bar-value timeline-bar-value-placeholder' : 'timeline-bar-value';
@@ -196,7 +219,7 @@ function buildTimelineEventRuns(events) {
   return runs;
 }
 
-function createTimelineEventGroup(run, maxCost, typeLabel) {
+function createTimelineEventGroup(run, maxCost) {
   const shouldHighlight = run.count >= 2;
   const node = document.createElement('div');
   node.className = shouldHighlight ? 'timeline-event-group timeline-event-group-highlight' : 'timeline-event-group';
@@ -211,14 +234,14 @@ function createTimelineEventGroup(run, maxCost, typeLabel) {
   const barsRow = document.createElement('div');
   barsRow.className = 'timeline-event-group-bars';
   run.events.forEach((eventData) => {
-    barsRow.appendChild(createTimelineBar(eventData, maxCost, typeLabel, { hideValue: shouldHighlight }));
+    barsRow.appendChild(createTimelineBar(eventData, maxCost, { hideValue: shouldHighlight }));
   });
 
   node.appendChild(barsRow);
   return node;
 }
 
-function createTimelineTrack(title, versionGroups, typeLabel, maxCost) {
+function createTimelineTrack(title, versionGroups, maxCost) {
   const track = document.createElement('div');
   track.className = 'timeline-track';
 
@@ -245,7 +268,7 @@ function createTimelineTrack(title, versionGroups, typeLabel, maxCost) {
       const bars = document.createElement('div');
       bars.className = 'timeline-version-bars';
       buildTimelineEventRuns(group.events).forEach((run) => {
-        bars.appendChild(createTimelineEventGroup(run, maxCost, typeLabel));
+        bars.appendChild(createTimelineEventGroup(run, maxCost));
       });
 
       const label = document.createElement('div');
@@ -804,6 +827,7 @@ function createAverageUpCurveChart(seriesList) {
 
 function stabilizeTimelineRender() {
   const blocks = timelineSection.querySelectorAll('.timeline-version-block');
+  const trackContents = timelineSection.querySelectorAll('.timeline-track-content');
   if (!blocks.length) return;
 
   requestAnimationFrame(() => {
@@ -815,6 +839,9 @@ function stabilizeTimelineRender() {
     requestAnimationFrame(() => {
       blocks.forEach((block) => {
         block.style.transform = '';
+      });
+      trackContents.forEach((content) => {
+        content.scrollLeft = Math.max(0, content.scrollWidth - content.clientWidth);
       });
     });
   });
@@ -840,8 +867,8 @@ function renderTimeline(data) {
   const shell = document.createElement('div');
   shell.className = 'card timeline-shell';
   shell.append(
-    createTimelineTrack('角色池 UP 时间轴', characterGroups, '角色池', maxCost),
-    createTimelineTrack('武器池 UP 时间轴', weaponGroups, '武器池', maxCost),
+    createTimelineTrack('角色池 UP 时间轴', characterGroups, maxCost),
+    createTimelineTrack('武器池 UP 时间轴', weaponGroups, maxCost),
     createAverageUpCurveChart([
       {
         label: '角色池',

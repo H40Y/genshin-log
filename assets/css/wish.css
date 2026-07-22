@@ -365,8 +365,21 @@ code {
   width: 24px;
   min-height: 12px;
   border-radius: 10px 10px 4px 4px;
-  background: linear-gradient(180deg, #8ea6ff 0%, #5f76d8 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 10px 20px rgba(95, 118, 216, 0.25);
+}
+.timeline-bar-segment {
+  width: 100%;
+  min-height: 0;
+  flex-basis: 0;
+}
+.timeline-bar-segment-up {
+  background: linear-gradient(180deg, #8ea6ff 0%, #5f76d8 100%);
+}
+.timeline-bar-segment-off-banner {
+  background: linear-gradient(180deg, #6473a8 0%, #46537a 100%);
 }
 .timeline-bar-marker {
   position: absolute;
@@ -413,23 +426,6 @@ code {
   font-size: 12px;
   color: var(--muted);
   line-height: 1.6;
-}
-.timeline-tooltip-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-}
-.timeline-tooltip-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.04);
 }
 .average-up-curve {
   display: grid;
