@@ -6,6 +6,7 @@ function setFieldVisible(fieldName, visible) {
 
 function syncBodyDialogState() {
   const anyOpen = Boolean(editDialog?.open || totalPullsDialog?.open || uigfReviewDialog?.open);
+  document.documentElement.classList.toggle('dialog-open', anyOpen);
   document.body.classList.toggle('dialog-open', anyOpen);
 }
 
@@ -237,4 +238,3 @@ function saveTotalPulls() {
   markEdited();
   rerender();
 }
-

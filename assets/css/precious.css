@@ -12,6 +12,7 @@
   font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 * { box-sizing: border-box; }
+html { scrollbar-gutter: stable; }
 body { margin: 0; color: var(--text); background: linear-gradient(180deg, #0a0f1d 0%, #10172b 100%); }
 .app-shell { min-height: 100vh; max-width: 1440px; margin: 0 auto; padding: 24px; }
 .topbar { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -112,7 +113,7 @@ select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
 input[readonly] { color: var(--text); background: rgba(255,255,255,0.035); cursor: default; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 .mobile-dialog-cancel { display: none; }
-body.dialog-open { overflow: hidden; }
+html.dialog-open, body.dialog-open { overflow: hidden; }
 .cascade-picker { display: grid; grid-template-columns: minmax(140px, 180px) minmax(0, 1fr); gap: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--panel-soft); overflow: hidden; }
 .cascade-column { display: grid; align-content: start; min-height: 220px; }
 .cascade-column + .cascade-column { border-left: 1px solid var(--border); }

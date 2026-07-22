@@ -11,14 +11,12 @@ const currentFileLabel = document.querySelector('#current-file-label');
 const dirtyIndicator = document.querySelector('#dirty-indicator');
 const preciousVersionDialog = document.querySelector('#precious-version-dialog');
 const preciousVersionForm = document.querySelector('#precious-version-form');
-const preciousVersionCancelBtn = document.querySelector('#precious-version-cancel');
 const preciousVersionTitle = document.querySelector('#precious-version-title');
 const preciousVersionLabelInput = document.querySelector('#precious-version-label-input');
 const preciousVersionSortKeyInput = document.querySelector('#precious-version-sort-key-input');
 const preciousVersionDeleteBtn = document.querySelector('#precious-version-delete');
 const preciousIncomeDialog = document.querySelector('#precious-income-dialog');
 const preciousIncomeForm = document.querySelector('#precious-income-form');
-const preciousIncomeCancelBtn = document.querySelector('#precious-income-cancel');
 const preciousIncomeDeleteBtn = document.querySelector('#precious-income-delete');
 const preciousIncomeTitle = document.querySelector('#precious-income-title');
 const preciousIncomeMaterialInput = document.querySelector('#precious-income-material-input');
@@ -27,7 +25,6 @@ const preciousIncomeModeFields = document.querySelector('#precious-income-mode-f
 const preciousIncomeNoteInput = document.querySelector('#precious-income-note-input');
 const preciousExpenseDialog = document.querySelector('#precious-expense-dialog');
 const preciousExpenseForm = document.querySelector('#precious-expense-form');
-const preciousExpenseCancelBtn = document.querySelector('#precious-expense-cancel');
 const preciousExpenseDeleteBtn = document.querySelector('#precious-expense-delete');
 const preciousExpenseTitle = document.querySelector('#precious-expense-title');
 const preciousExpenseMaterialInput = document.querySelector('#precious-expense-material-input');
@@ -40,7 +37,6 @@ const preciousExpenseMainStatInput = document.querySelector('#precious-expense-m
 const preciousExpenseNoteInput = document.querySelector('#precious-expense-note-input');
 const versionPickerDialog = document.querySelector('#version-picker-dialog');
 const versionPickerDialogTitle = document.querySelector('#version-picker-dialog-title');
-const versionPickerDialogClose = document.querySelector('#version-picker-dialog-close');
 const versionPickerGroupList = document.querySelector('#version-picker-group-list');
 const versionPickerVersionList = document.querySelector('#version-picker-version-list');
 const versionPickerSelectShell = document.querySelector('#version-picker-select-shell');
@@ -167,7 +163,9 @@ function updateDirtyIndicator() {
 }
 function syncBodyDialogState() {
   const dialogs = [preciousVersionDialog, preciousIncomeDialog, preciousExpenseDialog, versionPickerDialog];
-  document.body.classList.toggle('dialog-open', dialogs.some((dialog) => Boolean(dialog?.open)));
+  const anyOpen = dialogs.some((dialog) => Boolean(dialog?.open));
+  document.documentElement.classList.toggle('dialog-open', anyOpen);
+  document.body.classList.toggle('dialog-open', anyOpen);
 }
 function closePreciousVersionDialog() { if (!preciousVersionDialog?.open) return; preciousVersionDialog.close(); syncBodyDialogState(); preciousVersionEditing = null; }
 function closePreciousIncomeDialog() { if (!preciousIncomeDialog?.open) return; preciousIncomeDialog.close(); syncBodyDialogState(); preciousIncomeEditing = null; draftIncomeVersionEntries = []; }

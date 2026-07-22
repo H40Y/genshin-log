@@ -16,19 +16,16 @@ const currentFileLabel = document.querySelector('#current-file-label');
 const dirtyIndicator = document.querySelector('#dirty-indicator');
 const editDialog = document.querySelector('#edit-dialog');
 const editForm = document.querySelector('#edit-form');
-const editCancelBtn = document.querySelector('#edit-cancel');
 const editCancelMobileBtn = document.querySelector('#edit-cancel-mobile');
 const editDeleteBtn = document.querySelector('#edit-delete');
 const totalPullsDialog = document.querySelector('#total-pulls-dialog');
 const totalPullsForm = document.querySelector('#total-pulls-form');
-const totalPullsCancelBtn = document.querySelector('#total-pulls-cancel');
 const totalPullsCancelMobileBtn = document.querySelector('#total-pulls-cancel-mobile');
 const totalPullsInput = document.querySelector('#total-pulls-input');
 const totalPullsLabel = document.querySelector('#total-pulls-label');
 const uigfReviewDialog = document.querySelector('#uigf-review-dialog');
 const uigfReviewForm = document.querySelector('#uigf-review-form');
 const uigfReviewContent = document.querySelector('#uigf-review-content');
-const uigfReviewCancelBtn = document.querySelector('#uigf-review-cancel');
 const uigfReviewCloseBtn = document.querySelector('#uigf-review-close');
 const uigfReviewApplyBtn = document.querySelector('#uigf-review-apply');
 
@@ -406,4 +403,3 @@ function rerender() {
   renderTimeline(currentData);
   renderHistory(currentData);
 }
-

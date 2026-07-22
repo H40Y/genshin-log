@@ -13,6 +13,9 @@
 }
 
 * { box-sizing: border-box; }
+html {
+  scrollbar-gutter: stable;
+}
 body {
   margin: 0;
   color: var(--text);
@@ -821,6 +824,7 @@ select {
 .mobile-dialog-cancel {
   display: none;
 }
+html.dialog-open,
 body.dialog-open {
   overflow: hidden;
 }
@@ -1076,9 +1080,6 @@ body.dialog-open {
   .dialog-header {
     display: flex;
     margin-bottom: 16px;
-  }
-  .desktop-dialog-cancel {
-    display: none;
   }
   .mobile-dialog-cancel {
     display: inline-flex;

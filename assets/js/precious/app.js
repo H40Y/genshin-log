@@ -17,6 +17,18 @@ function rerenderPrecious() {
   const settingsSection = document.createElement('section'); settingsSection.className = 'section settings-section'; settingsSection.appendChild(buildVersionsCard()); preciousSection.appendChild(settingsSection);
 }
 
+function bindDialogBackdropClose(dialog, onClose) {
+  dialog?.addEventListener('click', (event) => {
+    if (event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const clickedInside = event.clientX >= rect.left
+      && event.clientX <= rect.right
+      && event.clientY >= rect.top
+      && event.clientY <= rect.bottom;
+    if (!clickedInside) onClose();
+  });
+}
+
 uploadTrigger?.addEventListener('click', () => uploadInput?.click());
 downloadTemplateTrigger?.addEventListener('click', handleTemplateDownload);
 downloadCurrentTrigger?.addEventListener('click', handleExport);
@@ -32,8 +44,8 @@ uploadInput?.addEventListener('change', async () => {
   } finally { uploadInput.value = ''; }
 });
 
-preciousVersionCancelBtn?.addEventListener('click', closePreciousVersionDialog);
 document.querySelector('[data-dialog-cancel="version"]')?.addEventListener('click', closePreciousVersionDialog);
+bindDialogBackdropClose(preciousVersionDialog, closePreciousVersionDialog);
 preciousVersionDialog?.addEventListener('close', syncBodyDialogState);
 preciousVersionDeleteBtn?.addEventListener('click', () => {
   if (!window.confirm('确定删除这个版本分组吗？')) return;
@@ -46,8 +58,8 @@ preciousVersionForm?.addEventListener('submit', (event) => {
   catch (error) { const msg = error instanceof Error ? error.message : String(error); setSyncStatus(`保存失败：${msg}`, 'error'); alert(`保存失败：${msg}`); }
 });
 
-preciousIncomeCancelBtn?.addEventListener('click', closePreciousIncomeDialog);
 document.querySelector('[data-dialog-cancel="income"]')?.addEventListener('click', closePreciousIncomeDialog);
+bindDialogBackdropClose(preciousIncomeDialog, closePreciousIncomeDialog);
 preciousIncomeDialog?.addEventListener('close', syncBodyDialogState);
 preciousIncomeMaterialInput?.addEventListener('change', syncIncomeDialogFields);
 preciousIncomeSourceInput?.addEventListener('change', syncIncomeDialogFields);
@@ -66,8 +78,8 @@ versionPickerEditorSave?.addEventListener('click', () => {
   catch (error) { const msg = error instanceof Error ? error.message : String(error); setSyncStatus(`填写失败：${msg}`, 'error'); alert(`填写失败：${msg}`); }
 });
 
-preciousExpenseCancelBtn?.addEventListener('click', closePreciousExpenseDialog);
 document.querySelector('[data-dialog-cancel="expense"]')?.addEventListener('click', closePreciousExpenseDialog);
+bindDialogBackdropClose(preciousExpenseDialog, closePreciousExpenseDialog);
 preciousExpenseDialog?.addEventListener('close', syncBodyDialogState);
 preciousExpenseMaterialInput?.addEventListener('change', () => { syncExpenseAmountBySelection(); syncExpenseSetNameInput(); });
 preciousExpenseSlotInput?.addEventListener('change', () => { refreshExpenseMainStatOptions(preciousExpenseSlotInput.value); syncExpenseAmountBySelection(); });
@@ -102,5 +114,5 @@ function main() {
 main();
 
 preciousExpenseVersionTrigger?.addEventListener('click', () => openVersionPickerDialog('expense'));
-versionPickerDialogClose?.addEventListener('click', closeVersionPickerDialog);
+bindDialogBackdropClose(versionPickerDialog, closeVersionPickerDialog);
 versionPickerDialog?.addEventListener('close', () => { activeVersionPickerTarget = null; versionPickerMode = 'select'; syncBodyDialogState(); });

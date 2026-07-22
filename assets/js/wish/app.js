@@ -22,6 +22,18 @@ function applyPendingUigfReview() {
   return summary;
 }
 
+function bindDialogBackdropClose(dialog, onClose) {
+  dialog?.addEventListener('click', (event) => {
+    if (event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const clickedInside = event.clientX >= rect.left
+      && event.clientX <= rect.right
+      && event.clientY >= rect.top
+      && event.clientY <= rect.bottom;
+    if (!clickedInside) onClose();
+  });
+}
+
 uploadBtn?.addEventListener('click', () => {
   uploadInput?.click();
 });
@@ -173,34 +185,25 @@ sampleBtn?.addEventListener('click', () => {
   rerender();
 });
 
-editCancelBtn?.addEventListener('click', () => {
-  closeEditDialog();
-});
-
 editCancelMobileBtn?.addEventListener('click', () => {
   closeEditDialog();
 });
 
+bindDialogBackdropClose(editDialog, closeEditDialog);
 editDialog?.addEventListener('close', syncBodyDialogState);
-
-totalPullsCancelBtn?.addEventListener('click', () => {
-  closeTotalPullsDialog();
-});
 
 totalPullsCancelMobileBtn?.addEventListener('click', () => {
   closeTotalPullsDialog();
 });
 
+bindDialogBackdropClose(totalPullsDialog, closeTotalPullsDialog);
 totalPullsDialog?.addEventListener('close', syncBodyDialogState);
-
-uigfReviewCancelBtn?.addEventListener('click', () => {
-  closeUigfReviewDialog();
-});
 
 uigfReviewCloseBtn?.addEventListener('click', () => {
   closeUigfReviewDialog();
 });
 
+bindDialogBackdropClose(uigfReviewDialog, closeUigfReviewDialog);
 uigfReviewDialog?.addEventListener('close', syncBodyDialogState);
 
 editForm?.addEventListener('submit', (event) => {
