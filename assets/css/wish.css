@@ -660,6 +660,16 @@ code {
 
 .table-wrap { overflow: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.history-table {
+  min-width: 720px;
+  table-layout: fixed;
+}
+.history-col-pull-index,
+.history-col-gap { width: 10%; }
+.history-col-name { width: 32%; }
+.history-col-type { width: 12%; }
+.history-col-detail { width: 24%; }
+.history-col-action { width: 12%; }
 th, td {
   text-align: left;
   padding: 12px 10px;

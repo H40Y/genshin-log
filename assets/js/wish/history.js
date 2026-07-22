@@ -146,7 +146,18 @@ function renderHistory(data) {
     });
 
     const table = document.createElement('table');
-    table.innerHTML = `<thead>${buildHistoryHead(banner.key)}</thead>`;
+    table.className = 'history-table';
+    table.innerHTML = `
+      <colgroup>
+        <col class="history-col-pull-index">
+        <col class="history-col-gap">
+        <col class="history-col-name">
+        <col class="history-col-type">
+        <col class="history-col-detail">
+        <col class="history-col-action">
+      </colgroup>
+      <thead>${buildHistoryHead(banner.key)}</thead>
+    `;
     const tbody = document.createElement('tbody');
     rows.forEach((row) => tbody.appendChild(row));
     table.appendChild(tbody);
@@ -183,4 +194,3 @@ function renderHistory(data) {
     button.addEventListener('click', () => openEditDialog(button.dataset.banner, button.dataset.recordId));
   });
 }
-
