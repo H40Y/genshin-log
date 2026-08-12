@@ -18,15 +18,28 @@ function rerenderPrecious() {
 }
 
 function bindDialogBackdropClose(dialog, onClose) {
-  dialog?.addEventListener('click', (event) => {
-    if (event.target !== dialog) return;
+  let backdropPointerId = null;
+
+  function isBackdropPointer(event) {
+    if (event.target !== dialog) return false;
     const rect = dialog.getBoundingClientRect();
-    const clickedInside = event.clientX >= rect.left
+    const pointerInside = event.clientX >= rect.left
       && event.clientX <= rect.right
       && event.clientY >= rect.top
       && event.clientY <= rect.bottom;
-    if (!clickedInside) onClose();
+    return !pointerInside;
+  }
+
+  dialog?.addEventListener('pointerdown', (event) => {
+    backdropPointerId = isBackdropPointer(event) ? event.pointerId : null;
   });
+  dialog?.addEventListener('pointerup', (event) => {
+    const shouldClose = backdropPointerId === event.pointerId && isBackdropPointer(event);
+    backdropPointerId = null;
+    if (shouldClose) onClose();
+  });
+  dialog?.addEventListener('pointercancel', () => { backdropPointerId = null; });
+  dialog?.addEventListener('close', () => { backdropPointerId = null; });
 }
 
 uploadTrigger?.addEventListener('click', () => uploadInput?.click());
