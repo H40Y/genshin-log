@@ -102,6 +102,12 @@ const EXPENSE_AMOUNT_BY_MATERIAL_AND_SLOT = {
   sanctifyingUnction: { 生之花: 1, 死之羽: 1, 时之沙: 2, 空之杯: 4, 理之冠: 3 },
   sanctifyingEssence: { 生之花: 1, 死之羽: 1, 时之沙: 2, 空之杯: 2, 理之冠: 2 },
 };
+const SANCTIFYING_ESSENCE_PROGRESS_STEP = 6;
+const SANCTIFYING_ESSENCE_PROGRESS_CYCLE = 18;
+const SANCTIFYING_ESSENCE_MILESTONE_NOTES = {
+  advanced: '高阶重塑',
+  oracle: '谕告重塑',
+};
 
 let storageAvailable = true;
 let currentPreciousData = null;
@@ -330,6 +336,41 @@ function getMaterialLabel(materialKey) { return PRECIOUS_MATERIALS.find((item) =
 function getVersionMap() { return new Map(getPreciousData().versions.map((item) => [item.id, item])); }
 function getVersionLabel(versionId) { return getVersionMap().get(versionId)?.label ?? '未分组'; }
 function sortVersions(list) { return list.slice().sort((a, b) => compareVersionGroup(a.sortKey, b.sortKey) || a.label.localeCompare(b.label, 'zh-CN')); }
+function getOrderedMaterialExpenses(materialKey) {
+  const versionOrder = new Map(sortVersions(getPreciousData().versions).map((version, index) => [version.id, index]));
+  return getPreciousMaterialData(materialKey).expenses
+    .map((record, index) => ({ record, index }))
+    .sort((left, right) => (versionOrder.get(left.record.versionId) ?? Number.MAX_SAFE_INTEGER) - (versionOrder.get(right.record.versionId) ?? Number.MAX_SAFE_INTEGER) || left.index - right.index)
+    .map(({ record }) => record);
+}
+function getPositiveExpenseAmount(record) {
+  const amount = Number(record?.amount);
+  return Number.isFinite(amount) && amount > 0 ? amount : 0;
+}
+function getSanctifyingEssenceMilestones() {
+  const milestones = new Map();
+  let accumulated = 0;
+  getOrderedMaterialExpenses('sanctifyingEssence').forEach((record) => {
+    const nextAccumulated = accumulated + getPositiveExpenseAmount(record);
+    let milestoneType = null;
+    for (let boundary = (Math.floor(accumulated / SANCTIFYING_ESSENCE_PROGRESS_STEP) + 1) * SANCTIFYING_ESSENCE_PROGRESS_STEP; boundary <= nextAccumulated; boundary += SANCTIFYING_ESSENCE_PROGRESS_STEP) {
+      if (boundary % SANCTIFYING_ESSENCE_PROGRESS_CYCLE === 0) milestoneType = 'oracle';
+      else if (milestoneType !== 'oracle') milestoneType = 'advanced';
+    }
+    if (milestoneType) milestones.set(record.id, { type: milestoneType, note: SANCTIFYING_ESSENCE_MILESTONE_NOTES[milestoneType] });
+    accumulated = nextAccumulated;
+  });
+  return milestones;
+}
+function getSanctifyingEssenceProgress() {
+  const total = getOrderedMaterialExpenses('sanctifyingEssence').reduce((sum, record) => sum + getPositiveExpenseAmount(record), 0);
+  const current = total % SANCTIFYING_ESSENCE_PROGRESS_CYCLE;
+  return {
+    total,
+    current,
+    stages: [0, 1, 2].map((stage) => Math.min(Math.max(current - stage * SANCTIFYING_ESSENCE_PROGRESS_STEP, 0), SANCTIFYING_ESSENCE_PROGRESS_STEP)),
+  };
+}
 function getVersionIncomeSourceOptions(materialKey) { return getPreciousMaterialData(materialKey).versionIncomeSources || []; }
 function getVersionIncomeSourceLabel(materialKey, sourceKey) { return getVersionIncomeSourceOptions(materialKey).find((item) => item.key === sourceKey)?.label ?? sourceKey; }
 function getIncomeSourceSortIndex(sourceValue) {

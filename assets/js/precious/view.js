@@ -76,6 +76,33 @@ function createBlockHeader(title, summary, addTitle, onAdd) {
   const right = document.createElement('div'); if (onAdd) right.appendChild(createIconButton(addTitle, onAdd));
   header.append(left, right); return header;
 }
+function createSanctifyingEssenceProgress() {
+  const progress = getSanctifyingEssenceProgress();
+  const list = document.createElement('div');
+  list.className = 'essence-progress-list';
+  list.setAttribute('aria-label', `启圣之尘重塑进度：${fmt(progress.current)} / ${SANCTIFYING_ESSENCE_PROGRESS_CYCLE}`);
+  progress.stages.forEach((value, index) => {
+    const percent = (value / SANCTIFYING_ESSENCE_PROGRESS_STEP) * 100;
+    const milestoneLabel = index === 2 ? '谕告重塑' : '高阶重塑';
+    const item = document.createElement('span');
+    item.className = 'essence-progress-item';
+    const ring = document.createElement('div');
+    ring.className = `essence-progress-ring${index === 2 ? ' is-oracle' : ''}${value === 0 ? ' is-empty' : ''}`;
+    const tooltipId = `essence-progress-tooltip-${index + 1}`;
+    ring.tabIndex = 0;
+    ring.setAttribute('role', 'img');
+    ring.setAttribute('aria-label', milestoneLabel);
+    ring.setAttribute('aria-describedby', tooltipId);
+    ring.innerHTML = `<svg viewBox="0 0 28 28" aria-hidden="true"><circle class="essence-progress-track" cx="14" cy="14" r="10" pathLength="100"></circle><circle class="essence-progress-value" cx="14" cy="14" r="10" pathLength="100" stroke-dasharray="${percent} 100"></circle></svg>`;
+    const tooltip = document.createElement('span');
+    tooltip.className = 'essence-progress-tooltip';
+    tooltip.id = tooltipId;
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.textContent = `${milestoneLabel}：${fmt(value)} / ${SANCTIFYING_ESSENCE_PROGRESS_STEP}`;
+    item.append(ring, tooltip); list.appendChild(item);
+  });
+  return list;
+}
 function createMaterialTabs(materialKey, activePanel, counts) {
   const tabs = document.createElement('div');
   tabs.className = 'precious-material-tabs';
@@ -175,6 +202,7 @@ function buildPreciousIncomeSubBlock(materialKey) {
 }
 function buildPreciousExpenseSubBlock(materialKey) {
   const material = getPreciousMaterialData(materialKey);
+  const essenceMilestones = materialKey === 'sanctifyingEssence' ? getSanctifyingEssenceMilestones() : new Map();
   const totalAmount = material.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   const card = document.createElement('section'); card.className = 'subcard';
   card.appendChild(createBlockHeader('支出', `${fmt(totalAmount)} 个`, `新增${getMaterialLabel(materialKey)}支出`, () => openCreatePreciousExpenseDialog(materialKey)));
@@ -194,6 +222,11 @@ function buildPreciousExpenseSubBlock(materialKey) {
     const tbody = document.createElement('tbody');
     items.forEach((item) => {
       const tr = document.createElement('tr');
+      const milestone = essenceMilestones.get(item.id);
+      if (milestone) {
+        tr.classList.add('expense-milestone', `expense-milestone-${milestone.type}`);
+        tr.title = milestone.note;
+      }
       tr.innerHTML = `<td>${fmt(item.amount)}</td><td>${item.setName}</td><td>${item.slot}</td><td>${item.mainStat}</td><td><button class="table-button compact-button" data-action="edit-expense" data-material="${materialKey}" data-record-id="${item.id}">修改</button></td>`;
       tbody.appendChild(tr);
     });
@@ -234,7 +267,9 @@ function buildPreciousMaterialBlock(materialKey) {
   const expenseAmount = material.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   const activePanel = preciousMobilePanelByMaterial[materialKey] || 'income';
   const block = document.createElement('article'); block.className = 'card precious-material-block';
-  block.appendChild(createBlockHeader(getMaterialLabel(materialKey)));
+  const materialHeader = createBlockHeader(getMaterialLabel(materialKey));
+  if (materialKey === 'sanctifyingEssence') materialHeader.querySelector('.block-header-left').appendChild(createSanctifyingEssenceProgress());
+  block.appendChild(materialHeader);
   block.appendChild(createMaterialTabs(materialKey, activePanel, { income: incomeAmount, expense: expenseAmount }));
   const grid = document.createElement('div'); grid.className = 'grid cards-2 precious-material-grid';
   const incomeBlock = buildPreciousIncomeSubBlock(materialKey);

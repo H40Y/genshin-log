@@ -313,8 +313,14 @@ function normalizePreciousExpenseInput() {
 function savePreciousExpense() {
   const input = normalizePreciousExpenseInput();
 
-  if (preciousExpenseEditing.mode === 'create') getPreciousMaterialData(input.materialKey).expenses.push({ id: buildPreciousRecordId('precious-expense'), ...input });
-  else {
+  if (preciousExpenseEditing.mode === 'create') {
+    const expense = { id: buildPreciousRecordId('precious-expense'), ...input };
+    getPreciousMaterialData(input.materialKey).expenses.push(expense);
+    if (input.materialKey === 'sanctifyingEssence') {
+      const milestone = getSanctifyingEssenceMilestones().get(expense.id);
+      if (milestone) expense.note = milestone.note;
+    }
+  } else {
     const oldList = getPreciousMaterialData(preciousExpenseEditing.materialKey).expenses;
     const index = oldList.findIndex((item) => item.id === preciousExpenseEditing.recordId);
     if (index < 0) throw new Error('未找到要修改的支出记录。');
