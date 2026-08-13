@@ -1,5 +1,16 @@
 .spending-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.spending-stack > * {
+  min-width: 0;
+}
+
+.spending-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(260px, 3fr);
   gap: 20px;
 }
 
@@ -156,8 +167,10 @@
 }
 
 .profit-card {
+  display: grid;
+  place-content: center;
+  min-width: 0;
   position: relative;
-  overflow: hidden;
   text-align: center;
 }
 
@@ -175,6 +188,125 @@
   font-size: 13px;
 }
 
+.profit-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.profit-info {
+  display: inline-flex;
+  position: relative;
+}
+
+.profit-info-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(167, 176, 208, 0.5);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: help;
+  font: 700 12px/1 Georgia, serif;
+}
+
+.profit-info-trigger:hover,
+.profit-info-trigger:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.profit-tooltip {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -12px;
+  z-index: 10;
+  width: min(330px, calc(100vw - 48px));
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(11, 16, 32, 0.98);
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+  visibility: hidden;
+}
+
+.profit-info:hover .profit-tooltip,
+.profit-info:focus-within .profit-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.profit-formula-title,
+.profit-formula-stack,
+.profit-formula-row,
+.profit-formula-term,
+.profit-formula-term small,
+.profit-formula-rule {
+  display: block;
+}
+
+.profit-formula-title {
+  margin-bottom: 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.profit-formula-stack {
+  font-variant-numeric: tabular-nums;
+}
+
+.profit-formula-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 25px;
+}
+
+.profit-formula-operator {
+  color: var(--text);
+  font-size: 14px;
+  text-align: center;
+}
+
+.profit-formula-term small {
+  margin-top: 1px;
+  color: rgba(167, 176, 208, 0.76);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.profit-formula-amount {
+  color: var(--text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.profit-formula-rule {
+  height: 1px;
+  margin: 5px 0 5px 22px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.profit-formula-result {
+  font-weight: 700;
+}
+
 .profit-value {
   margin: 10px 0 8px;
   font-size: clamp(34px, 5vw, 52px);
@@ -190,22 +322,15 @@
   font-size: 12px;
 }
 
-.profit-formula {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
 @media (max-width: 1100px) {
   .fixed-purchase-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
   .spending-stack { gap: 16px; }
+  .spending-summary-grid { grid-template-columns: 1fr; gap: 16px; }
   .spending-hero { min-height: 205px; padding: 28px 16px; }
+  .profit-card { min-height: 170px; }
   .spending-card-header { align-items: flex-start; }
   .spending-card-header h2 { font-size: 19px; }
   .fixed-purchase-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

@@ -112,19 +112,48 @@ function buildIncentiveItemsCard(totals) {
 }
 
 function buildExtraBalanceCard(totals) {
+  const primogemValue = (totals.otherPrimogems + totals.incentivePrimogems) / 20;
   const card = document.createElement('section');
   card.className = 'card profit-card';
   card.dataset.tone = totals.extraBalance > 0 ? 'positive' : totals.extraBalance < 0 ? 'negative' : 'neutral';
   card.innerHTML = `
-    <div class="profit-label">额外盈亏</div>
+    <div class="profit-label-row">
+      <span class="profit-label">额外盈亏</span>
+      <span class="profit-info">
+        <button class="profit-info-trigger" type="button" aria-label="查看额外盈亏计算方式" aria-describedby="profit-formula-tooltip">i</button>
+        <span class="profit-tooltip" id="profit-formula-tooltip" role="tooltip">
+          <span class="profit-formula-title">计算方式</span>
+          <span class="profit-formula-stack">
+            <span class="profit-formula-row">
+              <span class="profit-formula-operator"></span>
+              <span class="profit-formula-term">
+                原石折算
+                <small>（${formatSpendingNumber(totals.otherPrimogems, 0)} 氪金所得 + ${formatSpendingNumber(totals.incentivePrimogems, 0)} 激励值）÷ 20</small>
+              </span>
+              <span class="profit-formula-amount">${formatSpendingCurrency(primogemValue)}</span>
+            </span>
+            <span class="profit-formula-row">
+              <span class="profit-formula-operator">−</span>
+              <span class="profit-formula-term">其他金额</span>
+              <span class="profit-formula-amount">${formatSpendingCurrency(totals.otherTotal)}</span>
+            </span>
+            <span class="profit-formula-row">
+              <span class="profit-formula-operator">−</span>
+              <span class="profit-formula-term">成本</span>
+              <span class="profit-formula-amount">${formatSpendingCurrency(totals.incentiveCost)}</span>
+            </span>
+            <span class="profit-formula-rule" aria-hidden="true"></span>
+            <span class="profit-formula-row profit-formula-result">
+              <span class="profit-formula-operator">=</span>
+              <span class="profit-formula-term">额外盈亏</span>
+              <span class="profit-formula-amount">${formatSignedCurrency(totals.extraBalance)}</span>
+            </span>
+          </span>
+        </span>
+      </span>
+    </div>
     <div class="profit-value">${formatSignedNumber(totals.extraBalancePrimogems)} 原石</div>
-    <div class="profit-reference">${formatSignedCurrency(totals.extraBalance)}</div>
-    <div class="profit-formula">
-      计算方式：（${formatSpendingNumber(totals.otherPrimogems, 0)} 氪金所得
-      + ${formatSpendingNumber(totals.incentivePrimogems, 0)} 激励值）÷ 20
-      - ${formatSpendingCurrency(totals.otherTotal)}（其他金额）
-      - ${formatSpendingCurrency(totals.incentiveCost)}（成本）
-    </div>`;
+    <div class="profit-reference">${formatSignedCurrency(totals.extraBalance)}</div>`;
   return card;
 }
 
@@ -133,10 +162,13 @@ function rerenderSpending() {
   spendingSection.innerHTML = '';
   const stack = document.createElement('div');
   stack.className = 'spending-stack';
-  stack.appendChild(buildSpendingHero(totals));
+  const summary = document.createElement('div');
+  summary.className = 'spending-summary-grid';
+  summary.appendChild(buildSpendingHero(totals));
+  summary.appendChild(buildExtraBalanceCard(totals));
+  stack.appendChild(summary);
   stack.appendChild(buildFixedPurchaseCard());
   stack.appendChild(buildOtherItemsCard(totals));
   stack.appendChild(buildIncentiveItemsCard(totals));
-  stack.appendChild(buildExtraBalanceCard(totals));
   spendingSection.appendChild(stack);
 }
