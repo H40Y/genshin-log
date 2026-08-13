@@ -190,11 +190,11 @@ function buildPreciousExpenseSubBlock(materialKey) {
     const groupAmount = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     const title = document.createElement('div'); title.className = 'nested-group-title'; title.textContent = `${getVersionLabel(versionId)} · ${fmt(groupAmount)} 个`; group.appendChild(title);
     const tableWrap = document.createElement('div'); tableWrap.className = 'table-wrap';
-    const table = document.createElement('table'); table.innerHTML = '<thead><tr><th>数量</th><th>套装</th><th>部位</th><th>属性</th><th>备注</th><th>操作</th></tr></thead>';
+    const table = document.createElement('table'); table.className = 'expense-table'; table.innerHTML = '<colgroup><col class="expense-col-amount"><col class="expense-col-set"><col class="expense-col-slot"><col class="expense-col-stat"><col class="expense-col-action"></colgroup><thead><tr><th>数量</th><th>套装</th><th>部位</th><th>属性</th><th>操作</th></tr></thead>';
     const tbody = document.createElement('tbody');
     items.forEach((item) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${fmt(item.amount)}</td><td>${item.setName}</td><td>${item.slot}</td><td>${item.mainStat}</td><td>${item.note || '—'}</td><td><button class="table-button compact-button" data-action="edit-expense" data-material="${materialKey}" data-record-id="${item.id}">修改</button></td>`;
+      tr.innerHTML = `<td>${fmt(item.amount)}</td><td>${item.setName}</td><td>${item.slot}</td><td>${item.mainStat}</td><td><button class="table-button compact-button" data-action="edit-expense" data-material="${materialKey}" data-record-id="${item.id}">修改</button></td>`;
       tbody.appendChild(tr);
     });
     table.appendChild(tbody); tableWrap.appendChild(table); group.appendChild(tableWrap); card.appendChild(group);
