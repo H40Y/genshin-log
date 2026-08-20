@@ -1,11 +1,76 @@
+let spendingDigitRollAnimationFrame = null;
+
+function buildSpendingDigitRoller(element, value) {
+  if (!element) return;
+
+  const formattedValue = formatSpendingCurrency(value);
+  let digitIndex = 0;
+  element.replaceChildren();
+  element.setAttribute('aria-label', formattedValue);
+
+  Array.from(formattedValue).forEach((character) => {
+    if (/\d/.test(character)) {
+      const targetDigit = Number(character);
+      const digitWindow = document.createElement('span');
+      const digitReel = document.createElement('span');
+      digitWindow.className = 'spending-digit-window';
+      digitWindow.setAttribute('aria-hidden', 'true');
+      digitReel.className = 'spending-digit-reel';
+      digitReel.style.setProperty('--spending-digit-offset', `-${targetDigit}em`);
+      digitReel.style.setProperty('--spending-digit-delay', `${digitIndex * 55}ms`);
+      digitReel.style.setProperty('--spending-digit-duration', `${520 + (targetDigit * 70)}ms`);
+
+      for (let step = 0; step <= targetDigit; step += 1) {
+        const digit = document.createElement('span');
+        digit.className = 'spending-digit';
+        digit.textContent = String(step);
+        digitReel.appendChild(digit);
+      }
+
+      digitWindow.appendChild(digitReel);
+      element.appendChild(digitWindow);
+      digitIndex += 1;
+      return;
+    }
+
+    const separator = document.createElement('span');
+    separator.className = 'spending-digit-separator';
+    separator.setAttribute('aria-hidden', 'true');
+    separator.textContent = character;
+    element.appendChild(separator);
+  });
+}
+
+function animateSpendingTotal(element) {
+  if (!element) return;
+
+  if (spendingDigitRollAnimationFrame !== null) {
+    cancelAnimationFrame(spendingDigitRollAnimationFrame);
+    spendingDigitRollAnimationFrame = null;
+  }
+
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    element.classList.add('is-rolling');
+    return;
+  }
+
+  spendingDigitRollAnimationFrame = requestAnimationFrame(() => {
+    spendingDigitRollAnimationFrame = requestAnimationFrame(() => {
+      element.classList.add('is-rolling');
+      spendingDigitRollAnimationFrame = null;
+    });
+  });
+}
+
 function buildSpendingHero(totals) {
   const card = document.createElement('section');
   card.className = 'card spending-hero';
   card.innerHTML = `
     <div class="spending-hero-content">
       <div class="spending-hero-label">总氪金金额</div>
-      <div class="spending-total-amount">${formatSpendingCurrency(totals.totalSpent)}</div>
+      <div class="spending-total-amount"></div>
     </div>`;
+  buildSpendingDigitRoller(card.querySelector('.spending-total-amount'), totals.totalSpent);
   return card;
 }
 
@@ -161,16 +226,22 @@ function buildExtraBalanceCard(totals) {
 
 function rerenderSpending() {
   const totals = summarizeSpending();
+  if (spendingDigitRollAnimationFrame !== null) {
+    cancelAnimationFrame(spendingDigitRollAnimationFrame);
+    spendingDigitRollAnimationFrame = null;
+  }
   spendingSection.innerHTML = '';
   const stack = document.createElement('div');
   stack.className = 'spending-stack';
   const summary = document.createElement('div');
   summary.className = 'spending-summary-grid';
-  summary.appendChild(buildSpendingHero(totals));
+  const hero = buildSpendingHero(totals);
+  summary.appendChild(hero);
   summary.appendChild(buildExtraBalanceCard(totals));
   stack.appendChild(summary);
   stack.appendChild(buildFixedPurchaseCard());
   stack.appendChild(buildOtherItemsCard(totals));
   stack.appendChild(buildIncentiveItemsCard(totals));
   spendingSection.appendChild(stack);
+  animateSpendingTotal(hero.querySelector('.spending-total-amount'));
 }
