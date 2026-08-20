@@ -225,7 +225,6 @@ function buildPreciousExpenseSubBlock(materialKey) {
       const milestone = essenceMilestones.get(item.id);
       if (milestone) {
         tr.classList.add('expense-milestone', `expense-milestone-${milestone.type}`);
-        tr.title = milestone.note;
       }
       tr.innerHTML = `<td>${fmt(item.amount)}</td><td>${item.setName}</td><td>${item.slot}</td><td>${item.mainStat}</td><td><button class="table-button compact-button" data-action="edit-expense" data-material="${materialKey}" data-record-id="${item.id}">修改</button></td>`;
       tbody.appendChild(tr);
