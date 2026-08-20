@@ -119,13 +119,12 @@ function createPageSizeControl() {
 }
 
 function renderHistory(data) {
-  historySection.innerHTML = `
-    <div class="section-header">
-      <h2>5★ 历史</h2>
-      <p>当前修改只作用于页面内存数据，不会直接改本地文件；如需保留，请手动导出 JSON。</p>
-    </div>
-  `;
-  historySection.appendChild(createPageSizeControl());
+  const sectionHeader = document.createElement('div');
+  sectionHeader.className = 'section-header history-section-header';
+  sectionHeader.innerHTML = '<h2>5★ 历史</h2>';
+  sectionHeader.appendChild(createPageSizeControl());
+
+  historySection.replaceChildren(sectionHeader);
 
   BANNERS.forEach((banner) => {
     const bannerData = data.wishData[banner.key];

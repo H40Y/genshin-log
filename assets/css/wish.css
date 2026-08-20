@@ -610,10 +610,18 @@ code {
   fill: #f3c58a;
 }
 
+.history-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.history-section-header h2 {
+  margin-bottom: 0;
+}
 .history-toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 16px;
 }
 .history-page-size {
   display: inline-flex;

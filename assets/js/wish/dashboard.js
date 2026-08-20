@@ -52,7 +52,9 @@ function renderBannerCards(data) {
 
     node.querySelector('.banner-title').textContent = banner.label;
     node.querySelector('.banner-subtitle').textContent = banner.subtitle;
-    node.querySelector('.banner-pill').textContent = `${fmt(history.length)} 次 5★`;
+    node.querySelector('.banner-pill').textContent = banner.key === 'standard'
+      ? `${fmt(history.length)} 次 5★`
+      : `${fmt(history.length)} 次 5★｜${fmt(history.filter((item) => item.resultType === 'up').length)} UP`;
 
     const gridEl = node.querySelector('.banner-grid');
     gridEl.append(
@@ -91,4 +93,3 @@ function renderBannerCards(data) {
 
   bannerSection.appendChild(grid);
 }
-
