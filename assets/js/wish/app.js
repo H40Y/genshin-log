@@ -284,12 +284,10 @@ function main() {
       currentFileName = storedMeta?.fileName ?? '浏览器缓存';
       setDirty(Boolean(storedMeta?.isDirty));
       updateCurrentFileLabel();
-      setSyncStatus('已恢复浏览器缓存中的数据。', 'success');
     } else {
       currentFileName = '未加载';
       setDirty(false);
       updateCurrentFileLabel();
-      setSyncStatus(storageAvailable ? '准备就绪，等待上传 JSON。' : '准备就绪，等待上传 JSON（当前浏览器禁用了本地缓存）。');
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
