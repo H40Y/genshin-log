@@ -634,6 +634,27 @@ code {
   width: auto;
   min-width: 100px;
 }
+.character-overview-toolbar {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.character-overview-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  user-select: none;
+}
+.character-overview-filter input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
 .history-pagination {
   display: flex;
   justify-content: space-between;

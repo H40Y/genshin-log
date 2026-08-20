@@ -27,6 +27,7 @@ function loadCharacterOverviewApi() {
     buildCharacterOverview,
     buildLimitedCharacterPullRecords,
     buildStandardPullRecords,
+    filterCharacterOverviewCharacters,
     formatCharacterPullLabel,
     getCharacterPullPillClass,
     getCharacterPullScrollState,
@@ -88,6 +89,22 @@ test('equal counts are ordered by the latest limited-character pull index descen
   assert.deepEqual(
     Array.from(api.buildCharacterOverview(data), (item) => item.name),
     ['莫娜', '琴'],
+  );
+});
+
+test('standard characters are shown by default and can be filtered out', () => {
+  const characters = api.buildCharacterOverview(makeData(
+    [{ itemName: '迪卢克', itemType: '角色', pullIndex: 70 }],
+    [{ itemName: '那维莱特', itemType: '角色', pullIndex: 80, resultType: 'up' }],
+  ));
+
+  assert.deepEqual(
+    Array.from(api.filterCharacterOverviewCharacters(characters), (item) => item.name),
+    ['那维莱特', '迪卢克'],
+  );
+  assert.deepEqual(
+    Array.from(api.filterCharacterOverviewCharacters(characters, false), (item) => item.name),
+    ['那维莱特'],
   );
 });
 

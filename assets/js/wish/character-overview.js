@@ -1,8 +1,10 @@
 const CHARACTER_OVERVIEW_PURPLE_THRESHOLD = 7;
 const CHARACTER_OVERVIEW_DEFAULT_PAGE_SIZE = 10;
+const CHARACTER_OVERVIEW_DEFAULT_SHOW_STANDARD = true;
 
 let characterOverviewPageSize = CHARACTER_OVERVIEW_DEFAULT_PAGE_SIZE;
 let currentCharacterOverviewPage = 1;
+let showStandardCharacters = CHARACTER_OVERVIEW_DEFAULT_SHOW_STANDARD;
 
 function compareCharacterPullRecords(a, b) {
   const bannerOrder = {
@@ -111,6 +113,14 @@ function buildCharacterOverview(data) {
     ));
 }
 
+function filterCharacterOverviewCharacters(
+  characters,
+  includeStandardCharacters = CHARACTER_OVERVIEW_DEFAULT_SHOW_STANDARD,
+) {
+  if (includeStandardCharacters) return characters.slice();
+  return characters.filter((character) => !character.isStandardCharacter);
+}
+
 function formatCharacterPullLabel(record) {
   if (record.bannerKey === 'standard') {
     return `常驻·${record.drawCount}`;
@@ -176,6 +186,22 @@ function createCharacterOverviewPageSizeControl() {
   const wrap = document.createElement('div');
   wrap.className = 'history-toolbar character-overview-toolbar';
 
+  const standardFilter = document.createElement('label');
+  standardFilter.className = 'character-overview-filter';
+
+  const standardCheckbox = document.createElement('input');
+  standardCheckbox.type = 'checkbox';
+  standardCheckbox.checked = showStandardCharacters;
+  standardCheckbox.addEventListener('change', () => {
+    showStandardCharacters = standardCheckbox.checked;
+    resetCharacterOverviewPagination();
+    renderCharacterOverview(currentData);
+  });
+
+  const standardFilterText = document.createElement('span');
+  standardFilterText.textContent = '显示常驻';
+  standardFilter.append(standardCheckbox, standardFilterText);
+
   const label = document.createElement('label');
   label.className = 'history-page-size';
   label.innerHTML = '<span>每页角色</span>';
@@ -196,7 +222,7 @@ function createCharacterOverviewPageSizeControl() {
   });
 
   label.appendChild(select);
-  wrap.appendChild(label);
+  wrap.append(standardFilter, label);
   return wrap;
 }
 
@@ -278,7 +304,8 @@ function createCharacterOverviewRow(character) {
 }
 
 function renderCharacterOverview(data) {
-  const characters = buildCharacterOverview(data);
+  const allCharacters = buildCharacterOverview(data);
+  const characters = filterCharacterOverviewCharacters(allCharacters, showStandardCharacters);
   const pagination = paginateCharacterOverview(
     characters,
     currentCharacterOverviewPage,
@@ -297,7 +324,9 @@ function renderCharacterOverview(data) {
   if (!characters.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state character-overview-empty';
-    empty.textContent = '暂无 5★ 角色记录';
+    empty.textContent = allCharacters.length
+      ? '暂无符合筛选条件的 5★ 角色'
+      : '暂无 5★ 角色记录';
     card.appendChild(empty);
   } else {
     pagination.items.forEach((character) => {
