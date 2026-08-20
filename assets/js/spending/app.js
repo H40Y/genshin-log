@@ -8,7 +8,7 @@ uploadInput?.addEventListener('change', async () => {
   const file = uploadInput.files?.[0];
   if (!file) return;
   try {
-    currentSpendingData = validateAndNormalizeSpendingData(JSON.parse(await file.text()));
+    currentSpendingData = validateAndNormalizeSpendingData(parseSpendingJsonText(await file.text()));
     baselineSpendingData = cloneSpendingData(currentSpendingData);
     currentSpendingFileName = file.name || '已上传数据';
     spendingDirty = false;

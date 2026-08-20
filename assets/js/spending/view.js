@@ -22,6 +22,7 @@ function buildFixedPurchaseCard() {
     <div class="fixed-purchase-grid">
       ${SPENDING_FIXED_PURCHASES.map((item) => {
         const count = normalizeCount(data.fixedCounts[item.key]);
+        const updateTime = formatSpendingUpdateTime(data.fixedUpdateTimes[item.key]);
         return `
           <article class="fixed-purchase-item">
             <div>
@@ -33,6 +34,7 @@ function buildFixedPurchaseCard() {
               <span class="fixed-count-unit">次</span>
             </label>
             <div class="fixed-subtotal">小计<strong>${formatSpendingCurrency(count * item.unitPrice)}</strong></div>
+            <div class="fixed-update-time">${escapeSpendingHtml(updateTime)}</div>
           </article>`;
       }).join('')}
     </div>`;

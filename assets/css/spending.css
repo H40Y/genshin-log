@@ -129,6 +129,17 @@
   font-size: 17px;
 }
 
+.fixed-update-time {
+  margin-top: -8px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-align: right;
+}
+
 .spending-table {
   min-width: 560px;
   table-layout: fixed;

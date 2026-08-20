@@ -92,11 +92,34 @@ function formatSignedCurrency(value) {
   return `¥${formatSignedNumber(value)}`;
 }
 
+function formatSpendingUpdateTime(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  const pad = (number) => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function parseSpendingJsonText(text) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error('JSON 格式错误，请检查逗号、引号和括号是否完整。');
+    }
+    throw error;
+  }
+}
+
 function buildSpendingTemplateData() {
   return {
     schemaVersion: 1,
     fixedCounts: SPENDING_FIXED_PURCHASES.reduce((result, item) => {
       result[item.key] = 0;
+      return result;
+    }, {}),
+    fixedUpdateTimes: SPENDING_FIXED_PURCHASES.reduce((result, item) => {
+      result[item.key] = null;
       return result;
     }, {}),
     otherItems: [],
@@ -106,8 +129,10 @@ function buildSpendingTemplateData() {
 
 function normalizeSpendingData(raw) {
   const fixedCounts = {};
+  const fixedUpdateTimes = {};
   SPENDING_FIXED_PURCHASES.forEach((item) => {
     fixedCounts[item.key] = normalizeCount(raw?.fixedCounts?.[item.key]);
+    fixedUpdateTimes[item.key] = raw?.fixedUpdateTimes?.[item.key] ?? null;
   });
 
   const otherItems = Array.isArray(raw?.otherItems)
@@ -130,7 +155,7 @@ function normalizeSpendingData(raw) {
     })).filter((item) => item.name)
     : [];
 
-  return { schemaVersion: 1, fixedCounts, otherItems, incentiveItems };
+  return { schemaVersion: 1, fixedCounts, fixedUpdateTimes, otherItems, incentiveItems };
 }
 
 function validateAndNormalizeSpendingData(raw) {
@@ -148,6 +173,12 @@ function buildSampleSpendingData() {
       gnosticHymn: 4,
       gnosticChorus: 1,
       firstTopUp: 1,
+    },
+    fixedUpdateTimes: {
+      welkinMoon: now,
+      gnosticHymn: now,
+      gnosticChorus: now,
+      firstTopUp: now,
     },
     otherItems: [
       { id: 'sample-other-1', name: '创世结晶补充', amount: 198, primogems: 1980, updateTime: now },

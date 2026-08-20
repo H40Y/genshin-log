@@ -13,6 +13,12 @@
     "gnosticChorus": 0,
     "firstTopUp": 0
   },
+  "fixedUpdateTimes": {
+    "welkinMoon": null,
+    "gnosticHymn": null,
+    "gnosticChorus": null,
+    "firstTopUp": null
+  },
   "otherItems": [],
   "incentiveItems": []
 }
@@ -30,6 +36,8 @@
 | `firstTopUp` | 首充 | 1308 元 |
 
 所有计数都应为大于或等于 0 的整数。
+
+`fixedUpdateTimes` 以同样的四个字段保存各固定项的最后更新时间。页面修改对应计数时会写入 ISO 时间；旧数据省略该字段时按 `null` 处理。
 
 ## 其他计数
 

@@ -18,7 +18,14 @@ function closeIncentiveItemDialog() {
 
 function updateFixedPurchaseCount(key, rawValue) {
   if (!SPENDING_FIXED_PURCHASES.some((item) => item.key === key)) return;
-  getSpendingData().fixedCounts[key] = normalizeCount(rawValue);
+  const data = getSpendingData();
+  const nextCount = normalizeCount(rawValue);
+  if (data.fixedCounts[key] === nextCount) {
+    rerenderSpending();
+    return;
+  }
+  data.fixedCounts[key] = nextCount;
+  data.fixedUpdateTimes[key] = new Date().toISOString();
   markSpendingChanged();
   rerenderSpending();
   setSpendingSyncStatus('固定项计数已更新；如需保留，请导出 JSON。', 'success');
