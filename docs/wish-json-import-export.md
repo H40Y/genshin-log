@@ -6,6 +6,7 @@
 
 - 页面文件：`index-wish.html`
 - 脚本目录：`assets/js/wish/`（导入导出逻辑位于 `import-export.js`）
+- 数据类型：`dataType: "wish-history"`
 - 当前支持格式版本：`schemaVersion: 4`
 - 模板导出文件名：`wish-data.schema-v4.template.json`
 - 当前数据导出文件名：`wish-data.schema-v4.export.json`
@@ -23,6 +24,7 @@
 
 ```json
 {
+  "dataType": "wish-history",
   "schemaVersion": 4,
   "wishData": {
     "standard": {},
@@ -35,9 +37,10 @@
 导入时必须满足：
 
 - JSON 根节点必须是对象。
+- 新导出的 JSON 使用 `dataType: "wish-history"` 标识文件归属；旧文件省略该字段时，会根据下方必需结构识别。
 - `schemaVersion` 必须等于 `4`。
-- `wishData` 必须存在。
-- `wishData.standard`、`wishData.limitedCharacter`、`wishData.limitedWeapon` 三个池子必须全部存在。
+- `wishData` 必须是对象。
+- `wishData.standard`、`wishData.limitedCharacter`、`wishData.limitedWeapon` 三个池子必须全部存在且为对象。
 
 ## 池子字段
 
@@ -115,6 +118,7 @@
 
 ```json
 {
+  "dataType": "wish-history",
   "schemaVersion": 4,
   "wishData": {
     "standard": {

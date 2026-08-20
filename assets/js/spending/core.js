@@ -29,6 +29,7 @@ const incentiveItemDeleteButton = document.querySelector('#incentive-item-delete
 const SPENDING_STORAGE_KEY = 'gachaHistory.spending.data.v1';
 const SPENDING_STORAGE_META_KEY = 'gachaHistory.spending.meta.v1';
 const SPENDING_STORAGE_BASELINE_KEY = 'gachaHistory.spending.baseline.v1';
+const SPENDING_DATA_TYPE = 'spending-history';
 const SPENDING_FIXED_PURCHASES = [
   { key: 'welkinMoon', label: '空月祝福', unitPrice: 30 },
   { key: 'gnosticHymn', label: '珍珠纪行', unitPrice: 68 },
@@ -113,6 +114,7 @@ function parseSpendingJsonText(text) {
 
 function buildSpendingTemplateData() {
   return {
+    dataType: SPENDING_DATA_TYPE,
     schemaVersion: 1,
     fixedCounts: SPENDING_FIXED_PURCHASES.reduce((result, item) => {
       result[item.key] = 0;
@@ -155,12 +157,23 @@ function normalizeSpendingData(raw) {
     })).filter((item) => item.name)
     : [];
 
-  return { schemaVersion: 1, fixedCounts, fixedUpdateTimes, otherItems, incentiveItems };
+  return { dataType: SPENDING_DATA_TYPE, schemaVersion: 1, fixedCounts, fixedUpdateTimes, otherItems, incentiveItems };
 }
 
 function validateAndNormalizeSpendingData(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('JSON 根节点必须是对象。');
+  if (raw.dataType !== undefined && raw.dataType !== SPENDING_DATA_TYPE) {
+    throw new Error(`JSON 数据类型不匹配：氪金历史页仅支持 dataType: ${SPENDING_DATA_TYPE}。`);
+  }
   if (Number(raw.schemaVersion) !== 1) throw new Error('当前氪金历史页仅支持 schemaVersion: 1 的 JSON。');
+  if (!raw.fixedCounts || typeof raw.fixedCounts !== 'object' || Array.isArray(raw.fixedCounts)) {
+    throw new Error('该文件不是有效的氪金历史 JSON：缺少 fixedCounts 对象。');
+  }
+  if (raw.fixedUpdateTimes !== undefined && (!raw.fixedUpdateTimes || typeof raw.fixedUpdateTimes !== 'object' || Array.isArray(raw.fixedUpdateTimes))) {
+    throw new Error('该文件不是有效的氪金历史 JSON：fixedUpdateTimes 必须是对象。');
+  }
+  if (!Array.isArray(raw.otherItems)) throw new Error('该文件不是有效的氪金历史 JSON：缺少 otherItems 数组。');
+  if (!Array.isArray(raw.incentiveItems)) throw new Error('该文件不是有效的氪金历史 JSON：缺少 incentiveItems 数组。');
   return normalizeSpendingData(raw);
 }
 

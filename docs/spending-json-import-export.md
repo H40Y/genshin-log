@@ -1,11 +1,12 @@
 # 氪金历史 JSON 导入导出说明
 
-氪金历史页使用独立的 JSON 文件保存数据，当前格式版本为 `schemaVersion: 1`。
+氪金历史页使用独立的 JSON 文件保存数据，数据类型为 `dataType: "spending-history"`，当前格式版本为 `schemaVersion: 1`。
 
 ## 完整结构
 
 ```json
 {
+  "dataType": "spending-history",
   "schemaVersion": 1,
   "fixedCounts": {
     "welkinMoon": 0,
@@ -23,6 +24,8 @@
   "incentiveItems": []
 }
 ```
+
+导入时，JSON 根节点必须是对象，`schemaVersion` 必须等于 `1`，并包含对象类型的 `fixedCounts` 以及数组类型的 `otherItems`、`incentiveItems`。新导出的 JSON 使用 `dataType: "spending-history"` 标识文件归属；旧文件省略该字段时，会根据这些必需结构识别。`fixedUpdateTimes` 仍可省略以兼容旧文件，但提供时必须是对象。
 
 ## 固定项计数
 

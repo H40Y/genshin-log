@@ -53,6 +53,7 @@ const AVERAGE_UP_MIN_VISIBLE_POINTS = 5;
 const CHARACTER_AVERAGE_UP_EXPECTED_VALUE = 93.45;
 const AVERAGE_UP_AXIS_PADDING = 20;
 const AVERAGE_UP_RANGE_EPSILON = 0.000001;
+const WISH_DATA_TYPE = 'wish-history';
 const STORAGE_KEY = 'gachaHistory.uploadedData.v1';
 const STORAGE_META_KEY = 'gachaHistory.uploadedDataMeta.v1';
 const STORAGE_BASELINE_KEY = 'gachaHistory.baselineData.v1';
@@ -287,24 +288,30 @@ function validateAndNormalizeData(raw) {
     throw new Error('JSON 根节点必须是对象。');
   }
 
-  if (Number(raw.schemaVersion) !== 4) {
-    throw new Error('当前页面仅支持 schemaVersion: 4 的 JSON。');
+  if (raw.dataType !== undefined && raw.dataType !== WISH_DATA_TYPE) {
+    throw new Error(`JSON 数据类型不匹配：抽卡记录页仅支持 dataType: ${WISH_DATA_TYPE}。`);
   }
 
-  if (!raw.wishData || typeof raw.wishData !== 'object') {
-    throw new Error('缺少 wishData 对象。');
+  if (Number(raw.schemaVersion) !== 4) {
+    throw new Error('当前抽卡记录页仅支持 schemaVersion: 4 的 JSON。');
+  }
+
+  if (!raw.wishData || typeof raw.wishData !== 'object' || Array.isArray(raw.wishData)) {
+    throw new Error('该文件不是有效的抽卡记录 JSON：缺少 wishData 对象。');
   }
 
   const normalizedWishData = {};
 
   BANNERS.forEach((banner) => {
-    if (!raw.wishData[banner.key]) {
-      throw new Error(`缺少池子数据：${banner.key}`);
+    const bannerData = raw.wishData[banner.key];
+    if (!bannerData || typeof bannerData !== 'object' || Array.isArray(bannerData)) {
+      throw new Error(`该文件不是有效的抽卡记录 JSON：缺少池子数据 ${banner.key}。`);
     }
-    normalizedWishData[banner.key] = normalizeBannerData(banner.key, raw.wishData[banner.key]);
+    normalizedWishData[banner.key] = normalizeBannerData(banner.key, bannerData);
   });
 
   return {
+    dataType: WISH_DATA_TYPE,
     schemaVersion: 4,
     wishData: normalizedWishData,
   };

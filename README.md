@@ -39,7 +39,7 @@ iframe、CSS 和 JavaScript 使用固定的 `?v=` 版本号以利用浏览器和
 
 | 操作 | 作用 |
 | --- | --- |
-| 上传 JSON | 导入抽卡记录页原生 JSON。当前页面仅支持 `schemaVersion: 4`。 |
+| 上传 JSON | 导入抽卡记录页原生 JSON。当前页面的数据类型为 `wish-history`，仅支持 `schemaVersion: 4`。 |
 | 导入 UIGF | 在已加载主 JSON 的基础上导入 UIGF 文件，增量补充 4 星索引、5 星记录和总抽数。导入前会进行 offset 校验，校验失败时不能应用。 |
 | 下载模板 | 下载空白抽卡记录模板 `wish-data.schema-v4.template.json`。 |
 | 导出当前数据 | 将页面当前抽卡数据导出为 `wish-data.schema-v4.export.json`。页面编辑后应使用此按钮保存备份。 |
@@ -73,7 +73,7 @@ iframe、CSS 和 JavaScript 使用固定的 `?v=` 版本号以利用浏览器和
 
 | 操作 | 作用 |
 | --- | --- |
-| 上传 JSON | 导入贵重资源页原生 JSON。当前页面仅支持 `schemaVersion: 1`。 |
+| 上传 JSON | 导入贵重资源页原生 JSON。当前页面的数据类型为 `precious-resources`，仅支持 `schemaVersion: 1`。 |
 | 下载模板 | 下载空白贵重资源模板 `precious-resources.schema-v1.template.json`。 |
 | 导出当前数据 | 将页面当前贵重资源数据导出为 `precious-resources.schema-v1.export.json`。页面编辑后应使用此按钮保存备份。 |
 | 加载示例 | 加载内置示例数据，用于查看页面效果和数据结构。 |
@@ -95,7 +95,7 @@ iframe、CSS 和 JavaScript 使用固定的 `?v=` 版本号以利用浏览器和
 
 | 操作 | 作用 |
 | --- | --- |
-| 上传 JSON | 导入氪金历史页原生 JSON。当前页面仅支持 `schemaVersion: 1`。 |
+| 上传 JSON | 导入氪金历史页原生 JSON。当前页面的数据类型为 `spending-history`，仅支持 `schemaVersion: 1`。 |
 | 下载模板 | 下载空白氪金历史模板 `spending-history.schema-v1.template.json`。 |
 | 导出当前数据 | 将页面当前氪金历史数据导出为带日期的 JSON 文件。 |
 | 加载示例 | 加载内置示例数据，用于查看页面效果和数据结构。 |

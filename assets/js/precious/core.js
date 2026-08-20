@@ -50,6 +50,7 @@ const versionPickerEditList = document.querySelector('#version-picker-edit-list'
 const PRECIOUS_STORAGE_KEY = 'gachaHistory.preciousOnly.data.v8';
 const PRECIOUS_STORAGE_META_KEY = 'gachaHistory.preciousOnly.meta.v8';
 const PRECIOUS_STORAGE_BASELINE_KEY = 'gachaHistory.preciousOnly.baseline.v8';
+const PRECIOUS_DATA_TYPE = 'precious-resources';
 const PRECIOUS_MATERIALS = [
   { key: 'sanctifyingUnction', label: '祝圣之霜' },
   { key: 'sanctifyingEssence', label: '启圣之尘' },
@@ -207,6 +208,7 @@ function buildMaterialTemplate(materialKey) {
 }
 function buildPreciousTemplateData() {
   return {
+    dataType: PRECIOUS_DATA_TYPE,
     schemaVersion: 1,
     versions: buildDefaultPreciousVersions(),
     materials: {
@@ -299,11 +301,24 @@ function normalizePreciousResources(raw) {
       expenseSetOptions: normalizeExpenseSetOptions(source.expenseSetOptions, material.key, source.expenses),
     };
   });
-  return { schemaVersion: 1, versions, materials };
+  return { dataType: PRECIOUS_DATA_TYPE, schemaVersion: 1, versions, materials };
 }
 function validateAndNormalizePreciousData(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('JSON 根节点必须是对象。');
+  if (raw.dataType !== undefined && raw.dataType !== PRECIOUS_DATA_TYPE) {
+    throw new Error(`JSON 数据类型不匹配：贵重资源页仅支持 dataType: ${PRECIOUS_DATA_TYPE}。`);
+  }
   if (Number(raw.schemaVersion) !== 1) throw new Error('当前贵重资源页仅支持 schemaVersion: 1 的 JSON。');
+  if (!Array.isArray(raw.versions)) throw new Error('该文件不是有效的贵重资源 JSON：缺少 versions 数组。');
+  if (!raw.materials || typeof raw.materials !== 'object' || Array.isArray(raw.materials)) {
+    throw new Error('该文件不是有效的贵重资源 JSON：缺少 materials 对象。');
+  }
+  PRECIOUS_MATERIALS.forEach((material) => {
+    const materialData = raw.materials[material.key];
+    if (!materialData || typeof materialData !== 'object' || Array.isArray(materialData)) {
+      throw new Error(`该文件不是有效的贵重资源 JSON：缺少材料数据 ${material.key}。`);
+    }
+  });
   return normalizePreciousResources(raw);
 }
 function buildSamplePreciousData() {

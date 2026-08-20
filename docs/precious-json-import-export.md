@@ -6,6 +6,7 @@
 
 - 页面文件：`index-precious.html`
 - 脚本目录：`assets/js/precious/`（数据逻辑位于 `core.js`）
+- 数据类型：`dataType: "precious-resources"`
 - 当前支持格式版本：`schemaVersion: 1`
 - 模板导出文件名：`precious-resources.schema-v1.template.json`
 - 当前数据导出文件名：`precious-resources.schema-v1.export.json`
@@ -23,6 +24,7 @@
 
 ```json
 {
+  "dataType": "precious-resources",
   "schemaVersion": 1,
   "versions": [],
   "materials": {
@@ -35,9 +37,10 @@
 导入时必须满足：
 
 - JSON 根节点必须是对象。
+- 新导出的 JSON 使用 `dataType: "precious-resources"` 标识文件归属；旧文件省略该字段时，会根据下方必需结构识别。
 - `schemaVersion` 必须等于 `1`。
-- `versions` 缺失或不是数组时，页面会使用内置默认版本列表。
-- `materials` 中缺失的材料会按空模板补齐。
+- `versions` 必须是数组。
+- `materials` 必须是对象，且必须包含对象类型的 `sanctifyingUnction` 和 `sanctifyingEssence`。
 
 ## 材料类型
 
@@ -228,6 +231,7 @@
 
 ```json
 {
+  "dataType": "precious-resources",
   "schemaVersion": 1,
   "versions": [
     {

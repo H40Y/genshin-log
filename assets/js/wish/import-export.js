@@ -20,6 +20,7 @@ function renderEmptyState() {
 
 function buildTemplateData() {
   return {
+    dataType: WISH_DATA_TYPE,
     schemaVersion: 4,
     wishData: {
       standard: {
@@ -541,4 +542,3 @@ async function analyzeUigfFromFile(file) {
     diffs,
   };
 }
-
