@@ -99,6 +99,7 @@ function buildCharacterOverview(data) {
       return {
         name,
         count: pulls.length,
+        isStandardCharacter: STANDARD_CHARACTER_NAMES.has(name),
         latestLimitedPullIndex: getLatestLimitedPullIndex(pulls),
         pulls,
       };
@@ -117,6 +118,12 @@ function formatCharacterPullLabel(record) {
 
   const versionLabel = String(record.pullVersion?.label ?? '').trim() || '未标注';
   return `${versionLabel}·${record.drawCount}`;
+}
+
+function getCharacterPullPillClass(character, record) {
+  if (record.isPurple) return 'character-pull-pill character-pull-pill-purple';
+  if (character.isStandardCharacter) return 'character-pull-pill character-pull-pill-standard';
+  return 'character-pull-pill';
 }
 
 function getCharacterPullScrollState(pulls) {
@@ -260,9 +267,7 @@ function createCharacterOverviewRow(character) {
     }
 
     const pill = document.createElement('span');
-    pill.className = record.isPurple
-      ? 'character-pull-pill character-pull-pill-purple'
-      : 'character-pull-pill';
+    pill.className = getCharacterPullPillClass(character, record);
     pill.textContent = formatCharacterPullLabel(record);
     pulls.appendChild(pill);
   });

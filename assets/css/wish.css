@@ -401,13 +401,13 @@ code {
 }
 .timeline-bar-marker-off-banner {
   right: 11px;
-  color: #f3c58a;
-  border-color: rgba(243, 197, 138, 0.35);
+  color: #b9a8ff;
+  border-color: rgba(185, 168, 255, 0.35);
 }
 .timeline-bar-marker-capturing-radiance {
   left: 11px;
-  color: #b9a8ff;
-  border-color: rgba(185, 168, 255, 0.35);
+  color: #f3c58a;
+  border-color: rgba(243, 197, 138, 0.35);
 }
 .timeline-tooltip {
   position: fixed;
@@ -597,17 +597,17 @@ code {
 }
 .average-up-curve-line.average-up-curve-character,
 .average-up-curve-point.average-up-curve-character {
-  stroke: #8ea6ff;
+  stroke: #f3c58a;
 }
 .average-up-curve-point.average-up-curve-character {
-  fill: #8ea6ff;
+  fill: #f3c58a;
 }
 .average-up-curve-line.average-up-curve-weapon,
 .average-up-curve-point.average-up-curve-weapon {
-  stroke: #f3c58a;
+  stroke: #8ea6ff;
 }
 .average-up-curve-point.average-up-curve-weapon {
-  fill: #f3c58a;
+  fill: #8ea6ff;
 }
 
 .history-section-header {
@@ -717,14 +717,14 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
   background: rgba(255, 255, 255, 0.04);
 }
 .name-badge-off-banner {
-  color: #f3c58a;
-  border-color: rgba(243, 197, 138, 0.35);
-  background: rgba(243, 197, 138, 0.08);
-}
-.name-badge-capturing-radiance {
   color: #b9a8ff;
   border-color: rgba(185, 168, 255, 0.35);
   background: rgba(185, 168, 255, 0.08);
+}
+.name-badge-capturing-radiance {
+  color: #f3c58a;
+  border-color: rgba(243, 197, 138, 0.35);
+  background: rgba(243, 197, 138, 0.08);
 }
 
 .character-overview-card {
@@ -805,6 +805,11 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
   font-size: 13px;
   line-height: 1.2;
   white-space: nowrap;
+}
+.character-pull-pill-standard {
+  border-color: rgba(238, 242, 255, 0.55);
+  background: rgba(238, 242, 255, 0.08);
+  color: rgb(238, 242, 255);
 }
 .character-pull-pill-purple {
   border-color: rgba(185, 168, 255, 0.55);

@@ -14,7 +14,9 @@ function loadCharacterOverviewApi() {
     Array,
     Object,
     Map,
+    Set,
     Math,
+    STANDARD_CHARACTER_NAMES: new Set(['迪卢克', '琴', '七七', '刻晴', '莫娜', '提纳里', '迪希雅', '梦见月瑞希']),
   });
   const source = fs.readFileSync(
     path.join(projectRoot, 'assets/js/wish/character-overview.js'),
@@ -26,6 +28,7 @@ function loadCharacterOverviewApi() {
     buildLimitedCharacterPullRecords,
     buildStandardPullRecords,
     formatCharacterPullLabel,
+    getCharacterPullPillClass,
     getCharacterPullScrollState,
     paginateCharacterOverview,
     sortCharacterPullRecords,
@@ -68,6 +71,8 @@ test('character overview aggregates only five-star characters from the two chara
     Array.from(result[1].pulls, (record) => [record.bannerKey, record.pullIndex]),
     [['standard', 1072], ['limitedCharacter', 4791]],
   );
+  assert.equal(result[0].isStandardCharacter, false);
+  assert.equal(result[1].isStandardCharacter, true);
 });
 
 test('equal counts are ordered by the latest limited-character pull index descending', () => {
@@ -164,6 +169,21 @@ test('the eighth and later pulls are purple and separated without truncation', (
       [true, true],
       [true, false],
     ],
+  );
+});
+
+test('standard characters use the theme pill for the first seven pulls while limited characters stay gold', () => {
+  assert.equal(
+    api.getCharacterPullPillClass({ isStandardCharacter: true }, { isPurple: false }),
+    'character-pull-pill character-pull-pill-standard',
+  );
+  assert.equal(
+    api.getCharacterPullPillClass({ isStandardCharacter: false }, { isPurple: false }),
+    'character-pull-pill',
+  );
+  assert.equal(
+    api.getCharacterPullPillClass({ isStandardCharacter: true }, { isPurple: true }),
+    'character-pull-pill character-pull-pill-purple',
   );
 });
 
