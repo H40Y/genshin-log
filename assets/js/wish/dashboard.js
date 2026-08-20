@@ -41,7 +41,6 @@ function renderBannerCards(data) {
     const avgGap = average(allIntervals);
     const avgUpGap = average(upIntervals);
     const upRate = banner.key === 'standard' ? null : getResultRate(history, 'up');
-    const offRate = banner.key === 'standard' ? null : getResultRate(history, 'off-banner');
     const fiveStarRate = getFiveStarRate(bannerData.totalPulls, history.length);
     const latestNames = [...history]
       .sort((a, b) => b.pullIndex - a.pullIndex)
@@ -57,7 +56,7 @@ function renderBannerCards(data) {
       : `${fmt(history.length)} 次 5★｜${fmt(history.filter((item) => item.resultType === 'up').length)} UP`;
 
     const gridEl = node.querySelector('.banner-grid');
-    gridEl.append(
+    const metaBoxes = [
       createMetaBox('总抽数', fmt(bannerData.totalPulls)),
       createMetaBox('当前垫抽', fmt(bannerData.totalPulls - (history.length ? history[history.length - 1].pullIndex : 0))),
       createMetaBox('5★ 出率', pct(fiveStarRate)),
@@ -65,9 +64,15 @@ function renderBannerCards(data) {
         banner.key === 'standard' ? '5★ 平均间隔' : 'UP 5★ 平均间隔',
         `${(banner.key === 'standard' ? avgGap : avgUpGap).toFixed(2)} 抽`,
       ),
-      createMetaBox('4★ 角色', fmt((bannerData.fourStarPullIndices?.character || []).length)),
-      createMetaBox('4★ 武器', fmt((bannerData.fourStarPullIndices?.weapon || []).length)),
-    );
+      createMetaBox(
+        '4★ 角色 | 武器',
+        `${fmt((bannerData.fourStarPullIndices?.character || []).length)}｜${fmt((bannerData.fourStarPullIndices?.weapon || []).length)}`,
+      ),
+    ];
+    if (banner.key !== 'standard') {
+      metaBoxes.push(createMetaBox('UP 率', pct(upRate)));
+    }
+    gridEl.append(...metaBoxes);
 
     const totalPullsBox = gridEl.querySelector('.meta-box:first-child');
     if (totalPullsBox) {
@@ -83,8 +88,6 @@ function renderBannerCards(data) {
     }
 
     const notes = [`最后 5★：${lastFiveStar}`];
-    if (upRate !== null) notes.push(`UP 率 ${pct(upRate)}`);
-    if (offRate !== null) notes.push(`歪率 ${pct(offRate)}`);
     if (latestNames) notes.push(`最近 6 次：${latestNames}`);
     node.querySelector('.banner-note').textContent = notes.join(' ｜ ');
 
