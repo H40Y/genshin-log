@@ -123,6 +123,7 @@ resetBtn?.addEventListener('click', () => {
   pendingUigfReview = null;
   currentFileName = '未加载';
   currentPages = Object.fromEntries(BANNERS.map((banner) => [banner.key, 1]));
+  resetCharacterOverviewPagination();
   setDirty(false);
   clearPersistedData();
   updateCurrentFileLabel();
@@ -190,6 +191,7 @@ sampleBtn?.addEventListener('click', () => {
   baselineData = cloneData(currentData);
   currentFileName = '内置示例数据';
   currentPages = Object.fromEntries(BANNERS.map((banner) => [banner.key, 1]));
+  resetCharacterOverviewPagination();
   setDirty(false);
   persistBaselineData();
   persistSnapshot();

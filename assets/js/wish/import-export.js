@@ -15,6 +15,7 @@ function renderEmptyState() {
   `;
   bannerSection.innerHTML = '';
   timelineSection.innerHTML = '';
+  characterOverviewSection.innerHTML = '';
   historySection.innerHTML = '';
 }
 
@@ -71,6 +72,7 @@ async function importFromFile(file) {
   baselineData = cloneData(normalized);
   currentFileName = file.name;
   currentPages = Object.fromEntries(BANNERS.map((banner) => [banner.key, 1]));
+  resetCharacterOverviewPagination();
   setDirty(false);
   persistBaselineData();
   persistSnapshot();

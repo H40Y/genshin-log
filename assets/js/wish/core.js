@@ -1,6 +1,7 @@
 const overviewSection = document.querySelector('#overview-section');
 const bannerSection = document.querySelector('#banner-section');
 const timelineSection = document.querySelector('#timeline-section');
+const characterOverviewSection = document.querySelector('#character-overview-section');
 const historySection = document.querySelector('#history-section');
 const syncStatus = document.querySelector('#sync-status');
 const timelineTooltip = document.querySelector('#timeline-tooltip');
@@ -408,5 +409,6 @@ function rerender() {
   renderOverview(currentData);
   renderBannerCards(currentData);
   renderTimeline(currentData);
+  renderCharacterOverview(currentData);
   renderHistory(currentData);
 }
