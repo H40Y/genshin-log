@@ -5,7 +5,7 @@ function renderOverview(data) {
     ...data.wishData.limitedCharacter.fiveStarHistory,
     ...data.wishData.limitedWeapon.fiveStarHistory,
   ];
-  const standardFiveStars = data.wishData.standard.fiveStarHistory.length + limitedHistory.filter((item) => item.resultType === 'off-banner').length;
+  const totalFiveStars = data.wishData.standard.fiveStarHistory.length + limitedHistory.length;
   const limitedFiveStars = limitedHistory.filter((item) => item.resultType === 'up').length;
 
   const cards = document.createElement('div');
@@ -13,7 +13,7 @@ function renderOverview(data) {
   cards.append(
     makeStatCard('常驻总抽数', fmt(standardPulls), ''),
     makeStatCard('限定总抽数', fmt(limitedPulls), ''),
-    makeStatCard('非 UP 5★', fmt(standardFiveStars), ''),
+    makeStatCard('总 5★', fmt(totalFiveStars), ''),
     makeStatCard('UP 5★', fmt(limitedFiveStars), ''),
   );
 
