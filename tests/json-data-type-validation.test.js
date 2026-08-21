@@ -45,7 +45,7 @@ function loadPageDataApi(files, exposedFunctions) {
 
 const wish = loadPageDataApi(
   ['assets/js/version-info.js', 'assets/js/wish/core.js', 'assets/js/wish/import-export.js'],
-  ['buildDiff', 'buildTemplateData', 'getPullVersionByTime', 'renderVersionPhaseOptions', 'validateAndNormalizeData'],
+  ['analyzeUigfFromFile', 'buildDiff', 'buildTemplateData', 'getPullVersionByTime', 'renderVersionPhaseOptions', 'resolveUigfOffset', 'validateAndNormalizeData'],
 );
 const precious = loadPageDataApi(
   ['assets/js/version-info.js', 'assets/js/precious/core.js'],
@@ -162,6 +162,127 @@ test('UIGF limited five-stars infer their built-in version phase from time', () 
     { ...diff.newFiveStars[0].pullVersion },
     { label: '5.6', group: '5.6.5' },
   );
+});
+
+test('UIGF can initialize the wish page without existing main data', async () => {
+  const review = await wish.analyzeUigfFromFile({
+    name: 'uigf.json',
+    text: async () => JSON.stringify({
+      list: [
+        {
+          gacha_type: '301',
+          rank_type: '5',
+          name: '示例角色',
+          item_type: '角色',
+          time: '2025-05-30 12:00:00',
+        },
+      ],
+    }),
+  });
+
+  assert.equal(review.isInitialization, true);
+  assert.equal(review.initialData.schemaVersion, 4);
+  assert.equal(review.checks.every((check) => check.ok && check.skipped), true);
+  const limitedCharacterDiff = review.diffs.find((diff) => diff.bannerKey === 'limitedCharacter');
+  assert.equal(limitedCharacterDiff.offset, 0);
+  assert.equal(limitedCharacterDiff.candidateTotalPulls, 1);
+  assert.equal(limitedCharacterDiff.newFiveStars[0].pullIndex, 1);
+});
+
+test('UIGF incremental import infers a per-banner offset from overlapping records', () => {
+  const schema = wish.buildTemplateData();
+  schema.wishData.limitedCharacter.totalPulls = 100;
+  schema.wishData.limitedCharacter.fiveStarHistory.push({
+    id: 'existing-100',
+    pullIndex: 100,
+    time: '2025-05-30 12:00:00',
+    itemName: '示例角色',
+    itemType: '角色',
+    resultType: 'up',
+    capturingRadiance: null,
+    pullVersion: { label: '5.6', group: '5.6.5' },
+    source: 'manual',
+  });
+  const uigfList = [
+    {
+      gacha_type: '301',
+      rank_type: '5',
+      name: '示例角色',
+      item_type: '角色',
+      time: '2025-05-30 12:00:00',
+    },
+    {
+      gacha_type: '301',
+      rank_type: '4',
+      name: '示例四星',
+      item_type: '角色',
+      time: '2025-05-29 12:00:00',
+    },
+  ];
+
+  const check = wish.resolveUigfOffset(schema, uigfList, '301');
+  assert.equal(check.ok, true);
+  assert.equal(check.appliedOffset, 98);
+
+  const diff = wish.buildDiff(schema, uigfList, '301', check.appliedOffset);
+  assert.equal(diff.newFiveStars.length, 0);
+  assert.equal(diff.newFourStars[0].pullIndex, 99);
+});
+
+test('duplicate five-star metadata contributes offset votes without creating record ambiguity', () => {
+  const schema = wish.buildTemplateData();
+  schema.wishData.limitedCharacter.totalPulls = 103;
+  schema.wishData.limitedCharacter.fiveStarHistory = [100, 103].map((pullIndex) => ({
+    id: `duplicate-${pullIndex}`,
+    pullIndex,
+    time: '2025-03-04 18:01:34',
+    itemName: '芙宁娜',
+    itemType: '角色',
+    resultType: 'up',
+    capturingRadiance: null,
+    pullVersion: { label: '5.4', group: '5.4.0' },
+    source: 'manual',
+  }));
+  const duplicateFiveStar = {
+    gacha_type: '301',
+    rank_type: '5',
+    name: '芙宁娜',
+    item_type: '角色',
+    time: '2025-03-04 18:01:34',
+  };
+  const uigfList = [
+    duplicateFiveStar,
+    { gacha_type: '301', rank_type: '3', name: '冷刃', item_type: '武器', time: '2025-03-04 18:01:34' },
+    { gacha_type: '301', rank_type: '3', name: '黎明神剑', item_type: '武器', time: '2025-03-04 18:01:34' },
+    duplicateFiveStar,
+  ];
+
+  const check = wish.resolveUigfOffset(schema, uigfList, '301');
+  assert.equal(check.ok, true);
+  assert.equal(check.appliedOffset, 99);
+  assert.equal(check.support, 2);
+  assert.equal('ambiguous' in check, false);
+
+  const diff = wish.buildDiff(schema, uigfList, '301', check.appliedOffset);
+  assert.equal(diff.newFiveStars.length, 0);
+  assert.equal(diff.patchFiveStars.length, 0);
+});
+
+test('UIGF incremental import rejects a populated banner without an offset anchor', () => {
+  const schema = wish.buildTemplateData();
+  schema.wishData.standard.totalPulls = 80;
+  const check = wish.resolveUigfOffset(schema, [
+    {
+      gacha_type: '200',
+      rank_type: '5',
+      name: '刻晴',
+      item_type: '角色',
+      time: '2025-05-30 12:00:00',
+    },
+  ], '200');
+
+  assert.equal(check.ok, false);
+  assert.equal(check.appliedOffset, null);
 });
 
 test('UIGF review version choices come only from the built-in catalog', () => {

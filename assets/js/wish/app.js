@@ -1,7 +1,10 @@
 function applyPendingUigfReview() {
-  if (!pendingUigfReview || !currentData) {
+  if (!pendingUigfReview) {
     throw new Error('当前没有待应用的 UIGF 导入结果。');
   }
+
+  const baseData = currentData ?? pendingUigfReview.initialData;
+  if (!baseData) throw new Error('UIGF 初始化数据不可用，请重新导入。');
 
   const { failed } = summarizeUigfResult(pendingUigfReview.checks, pendingUigfReview.diffs);
   if (failed.length > 0) {
@@ -10,9 +13,17 @@ function applyPendingUigfReview() {
 
   syncUigfSupplementalInputs(pendingUigfReview);
 
-  const next = cloneData(currentData);
+  const next = cloneData(baseData);
   pendingUigfReview.diffs.forEach((diff) => applyDiff(next, diff));
   currentData = validateAndNormalizeData(next);
+  if (pendingUigfReview.isInitialization) {
+    baselineData = cloneData(baseData);
+    currentFileName = `${pendingUigfReview.fileName}（UIGF 初始化）`;
+    currentPages = Object.fromEntries(BANNERS.map((banner) => [banner.key, 1]));
+    resetCharacterOverviewPagination();
+    persistBaselineData();
+    updateCurrentFileLabel();
+  }
   markEdited();
   rerender();
 

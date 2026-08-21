@@ -36,12 +36,6 @@ const BANNERS = [
   { key: 'limitedWeapon', label: '限定武器池', subtitle: '神铸赋形', gachaType: 302 },
 ];
 
-const OFFSETS = {
-  200: 581,
-  301: 2574,
-  302: 769,
-};
-
 const BANNER_KEY_BY_GACHA_TYPE = {
   200: 'standard',
   301: 'limitedCharacter',

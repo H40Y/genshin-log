@@ -3,16 +3,18 @@ function renderEmptyState() {
     <div class="card landing-card">
       <div class="landing-badge">抽卡记录</div>
       <h2>现在就可以开始</h2>
-      <p>你可以上传已有的抽卡记录、下载模板开始整理，或者先加载示例数据看看页面结构。</p>
+      <p>你可以上传已有的抽卡记录或 UIGF 文件、下载模板开始整理，或者先加载示例数据看看页面结构。</p>
       <div class="tools-actions landing-actions">
         <button id="empty-download-template" class="ghost-button compact-button" type="button">下载模板</button>
         <button id="empty-load-sample" class="ghost-button compact-button" type="button">加载示例数据</button>
+        <button id="empty-import-uigf" class="ghost-button compact-button" type="button">导入 UIGF</button>
         <button id="empty-upload-data" class="primary-button compact-button" type="button">上传抽卡记录</button>
       </div>
     </div>
   `;
   overviewSection.querySelector('#empty-download-template')?.addEventListener('click', () => templateBtn?.click());
   overviewSection.querySelector('#empty-load-sample')?.addEventListener('click', () => sampleBtn?.click());
+  overviewSection.querySelector('#empty-import-uigf')?.addEventListener('click', () => uigfBtn?.click());
   overviewSection.querySelector('#empty-upload-data')?.addEventListener('click', () => uploadBtn?.click());
   bannerSection.innerHTML = '';
   timelineSection.innerHTML = '';
@@ -81,7 +83,7 @@ async function importFromFile(file) {
   rerender();
 }
 
-function getBannerRows(uigfList, gachaType) {
+function getBannerRows(uigfList, gachaType, offset = 0) {
   const normalizedType = String(gachaType);
   const rows = uigfList.filter((row) => String(row.gacha_type) === normalizedType);
   const total = rows.length;
@@ -89,7 +91,7 @@ function getBannerRows(uigfList, gachaType) {
     ...row,
     originalLocalIndex: index + 1,
     reversedLocalIndex: total - index,
-    pullIndex: total - index + OFFSETS[normalizedType],
+    pullIndex: total - index + offset,
   }));
 }
 
@@ -108,34 +110,80 @@ function buildTimedOffsetCheck(schema, uigfList, gachaType) {
     byTime.get(row.time).push(row);
   }
 
-  const offsets = [];
-  const ambiguous = [];
+  const offsetVotes = new Map();
 
   for (const row of schemaTimed) {
     const candidates = (byTime.get(row.time) || []).filter(
       (item) => item.name === row.itemName && item.item_type === row.itemType,
     );
 
-    if (candidates.length === 1) {
-      offsets.push(row.pullIndex - candidates[0].reversedLocalIndex);
-    } else {
-      ambiguous.push({
-        pullIndex: row.pullIndex,
-        time: row.time,
-        itemName: row.itemName,
-        candidateCount: candidates.length,
-      });
+    for (const candidate of candidates) {
+      const offset = row.pullIndex - candidate.reversedLocalIndex;
+      if (!Number.isInteger(offset) || offset < 0) continue;
+      offsetVotes.set(offset, (offsetVotes.get(offset) ?? 0) + 1);
     }
   }
 
-  const uniqueOffsets = [...new Set(offsets)];
+  const rankedOffsets = [...offsetVotes.entries()]
+    .map(([offset, support]) => ({ offset, support }))
+    .sort((a, b) => b.support - a.support || a.offset - b.offset);
+  const best = rankedOffsets[0] ?? null;
+  const hasUniqueWinner = Boolean(best) && (rankedOffsets[1]?.support ?? 0) < best.support;
+  const inferredOffset = hasUniqueWinner ? best.offset : null;
   return {
     gachaType: String(gachaType),
     bannerKey,
-    expectedOffset: OFFSETS[String(gachaType)],
-    uniqueOffsets,
-    ok: uniqueOffsets.length === 1 && uniqueOffsets[0] === OFFSETS[String(gachaType)],
-    ambiguous,
+    rankedOffsets,
+    inferredOffset,
+    support: hasUniqueWinner ? best.support : 0,
+    ok: hasUniqueWinner,
+  };
+}
+
+function bannerHasData(banner) {
+  return Number(banner?.totalPulls ?? 0) > 0
+    || (banner?.fiveStarHistory?.length ?? 0) > 0
+    || (banner?.fourStarPullIndices?.character?.length ?? 0) > 0
+    || (banner?.fourStarPullIndices?.weapon?.length ?? 0) > 0;
+}
+
+function resolveUigfOffset(schema, uigfList, gachaType) {
+  const bannerKey = BANNER_KEY_BY_GACHA_TYPE[gachaType];
+  const importedCount = uigfList.filter((row) => String(row.gacha_type) === String(gachaType)).length;
+
+  if (importedCount === 0) {
+    return {
+      gachaType: String(gachaType),
+      bannerKey,
+      rankedOffsets: [],
+      inferredOffset: 0,
+      appliedOffset: 0,
+      ok: true,
+      skipped: true,
+      statusText: 'UIGF 中无该池记录',
+      support: 0,
+    };
+  }
+
+  if (!bannerHasData(schema.wishData[bannerKey])) {
+    return {
+      gachaType: String(gachaType),
+      bannerKey,
+      rankedOffsets: [],
+      inferredOffset: 0,
+      appliedOffset: 0,
+      ok: true,
+      skipped: true,
+      statusText: '空池初始化，从第 1 抽开始',
+      support: 0,
+    };
+  }
+
+  const check = buildTimedOffsetCheck(schema, uigfList, gachaType);
+  return {
+    ...check,
+    appliedOffset: check.ok ? check.inferredOffset : null,
+    statusText: check.ok ? `已由 ${check.support} 条位置关系确认` : '无法确定唯一 offset',
   };
 }
 
@@ -148,10 +196,10 @@ function getPullVersionByTime(time) {
   };
 }
 
-function buildDiff(schema, uigfList, gachaType) {
+function buildDiff(schema, uigfList, gachaType, offset = 0) {
   const bannerKey = BANNER_KEY_BY_GACHA_TYPE[gachaType];
   const banner = schema.wishData[bannerKey];
-  const mapped = getBannerRows(uigfList, gachaType);
+  const mapped = getBannerRows(uigfList, gachaType, offset);
 
   const existingFourCharacter = new Set(banner.fourStarPullIndices.character);
   const existingFourWeapon = new Set(banner.fourStarPullIndices.weapon);
@@ -231,7 +279,7 @@ function buildDiff(schema, uigfList, gachaType) {
     bannerKey,
     bannerLabel: BANNERS.find((item) => item.key === bannerKey)?.label ?? bannerKey,
     gachaType: String(gachaType),
-    offset: OFFSETS[String(gachaType)],
+    offset,
     currentTotalPulls: banner.totalPulls,
     candidateTotalPulls: Math.max(banner.totalPulls, ...mapped.map((row) => row.pullIndex), banner.totalPulls),
     newFourStars,
@@ -464,15 +512,15 @@ function renderUigfReviewPanel(review) {
   const { count, failed } = summarizeUigfResult(review.checks, review.diffs);
 
   const checkHtml = review.checks.map((check) => {
-    const status = check.ok ? '通过' : '失败';
-    const offsets = check.uniqueOffsets.length ? check.uniqueOffsets.join(', ') : '无可用匹配';
+    const status = check.ok ? check.statusText ?? '通过' : check.statusText ?? '失败';
+    const offset = check.appliedOffset === null || check.appliedOffset === undefined
+      ? '不可用'
+      : String(check.appliedOffset);
     return `
       <div class="uigf-check-card ${check.ok ? 'is-ok' : 'is-failed'}">
         <div><strong>${BANNERS.find((item) => item.key === check.bannerKey)?.label ?? check.bannerKey}</strong></div>
         <div>校验：${status}</div>
-        <div>期望 offset：${check.expectedOffset}</div>
-        <div>实际 offset：${offsets}</div>
-        ${check.ambiguous.length ? `<div>歧义匹配：${check.ambiguous.length} 条</div>` : ''}
+        <div>采用 offset：${offset}</div>
       </div>
     `;
   }).join('');
@@ -541,10 +589,6 @@ function renderUigfReviewPanel(review) {
 }
 
 async function analyzeUigfFromFile(file) {
-  if (!currentData) {
-    throw new Error('请先上传 schemaVersion: 4 的主 JSON，再导入 UIGF。');
-  }
-
   const text = await file.text();
   const imported = JSON.parse(text);
   const uigfList = Array.isArray(imported.list) ? imported.list : [];
@@ -552,10 +596,14 @@ async function analyzeUigfFromFile(file) {
     throw new Error('UIGF 文件缺少 list 数组，或数组为空。');
   }
 
-  const checks = ['200', '301', '302'].map((gachaType) => buildTimedOffsetCheck(currentData, uigfList, gachaType));
-  const diffs = ['200', '301', '302'].map((gachaType) => buildDiff(currentData, uigfList, gachaType));
+  const isInitialization = !currentData;
+  const baseData = currentData ?? buildTemplateData();
+  const checks = ['200', '301', '302'].map((gachaType) => resolveUigfOffset(baseData, uigfList, gachaType));
+  const diffs = checks.map((check) => buildDiff(baseData, uigfList, check.gachaType, check.appliedOffset ?? 0));
   return {
     fileName: file.name,
+    isInitialization,
+    initialData: isInitialization ? baseData : null,
     checks,
     diffs,
   };
