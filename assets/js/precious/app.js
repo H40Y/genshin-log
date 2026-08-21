@@ -87,8 +87,14 @@ preciousIncomeDeleteBtn?.addEventListener('click', () => {
 });
 
 versionPickerEditorSave?.addEventListener('click', () => {
-  try { saveVersionPickerEditEntry(); }
-  catch (error) { const msg = error instanceof Error ? error.message : String(error); setSyncStatus(`填写失败：${msg}`, 'error'); alert(`填写失败：${msg}`); }
+  try {
+    saveVersionPickerEditEntry();
+    savePreciousIncome();
+    closeVersionPickerDialog();
+    closePreciousIncomeDialog();
+    setSyncStatus('收入记录已保存；如需保留，请导出 JSON。', 'success');
+  }
+  catch (error) { const msg = error instanceof Error ? error.message : String(error); setSyncStatus(`保存失败：${msg}`, 'error'); alert(`保存失败：${msg}`); }
 });
 
 document.querySelector('[data-dialog-cancel="expense"]')?.addEventListener('click', closePreciousExpenseDialog);
