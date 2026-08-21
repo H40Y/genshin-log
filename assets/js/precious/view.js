@@ -1,7 +1,7 @@
 function buildPreciousRecordId(prefix) { return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; }
 function groupVersionsForDisplay() {
   const grouped = new Map();
-  sortVersions(getPreciousData().versions).forEach((version) => {
+  sortVersions(GENSHIN_VERSION_INFO.versions).forEach((version) => {
     const key = version.group || inferVersionGroup(version.sortKey, version.label);
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push(version);
@@ -17,8 +17,7 @@ function getLatestExpenseVersionId(materialKey) {
       .sort((a, b) => compareVersionGroup(getVersionMap().get(a.versionId)?.sortKey, getVersionMap().get(b.versionId)?.sortKey))[expenses.length - 1];
     if (latestExpense?.versionId) return latestExpense.versionId;
   }
-  const versions = sortVersions(getPreciousData().versions);
-  return versions[versions.length - 1]?.id ?? '';
+  return GENSHIN_VERSION_INFO.getCurrentVersion()?.id ?? GENSHIN_VERSION_INFO.versions[0]?.id ?? '';
 }
 function groupExpensesByVersion(expenses) {
   const grouped = new Map();
@@ -133,21 +132,6 @@ function buildPreciousStatCard(materialKey) {
   grid.append(createMetaBox('总收入', fmt(summary.incomeTotal)), createMetaBox('总支出', fmt(summary.expenseTotal)), createMetaBox('当前结余', fmt(summary.balance)));
   node.appendChild(grid); return node;
 }
-function buildVersionsCard() {
-  const versionCard = document.createElement('article'); versionCard.className = 'card versions-card-muted';
-  versionCard.appendChild(createBlockHeader('记录版本', `${fmt(getPreciousData().versions.length)} 个版本`, '修改版本', openCreatePreciousVersionDialog));
-  groupVersionsForDisplay().forEach(([groupName, versions]) => {
-    const details = document.createElement('details'); details.className = 'version-group-details';
-    const summary = document.createElement('summary'); summary.textContent = `${groupName} · ${fmt(versions.length)} 个版本`; details.appendChild(summary);
-    const list = document.createElement('div'); list.className = 'version-chip-list';
-    versions.forEach((version) => {
-      const row = document.createElement('div'); row.className = 'version-chip'; row.innerHTML = `<span>${version.label}</span>`;
-      const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'ghost-button compact-button'; editBtn.textContent = '修改'; editBtn.addEventListener('click', () => openEditPreciousVersionDialog(version.id)); row.appendChild(editBtn); list.appendChild(row);
-    });
-    details.appendChild(list); versionCard.appendChild(details);
-  });
-  return versionCard;
-}
 function buildPreciousIncomeSubBlock(materialKey) {
   const material = getPreciousMaterialData(materialKey);
   const groups = [
@@ -206,7 +190,6 @@ function buildPreciousExpenseSubBlock(materialKey) {
   const totalAmount = material.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   const card = document.createElement('section'); card.className = 'subcard';
   card.appendChild(createBlockHeader('支出', `${fmt(totalAmount)} 个`, `新增${getMaterialLabel(materialKey)}支出`, () => openCreatePreciousExpenseDialog(materialKey)));
-  if (!getPreciousData().versions.length) { const note = document.createElement('div'); note.className = 'empty-state'; note.textContent = '先新增版本分组，再录入支出。'; card.appendChild(note); return card; }
   if (!material.expenses.length) { const note = document.createElement('div'); note.className = 'empty-state'; note.textContent = '暂无支出记录'; card.appendChild(note); return card; }
   const groupedExpenses = groupExpensesByVersion(material.expenses);
   const pages = paginateExpenseGroups(groupedExpenses);

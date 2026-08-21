@@ -16,8 +16,23 @@ function loadCharacterOverviewApi() {
     Map,
     Set,
     Math,
+    Date,
+    compareVersionGroup(a, b) {
+      const left = String(a ?? '').split('.').map((part) => Number(part) || 0);
+      const right = String(b ?? '').split('.').map((part) => Number(part) || 0);
+      const length = Math.max(left.length, right.length);
+      for (let index = 0; index < length; index += 1) {
+        if ((left[index] ?? 0) !== (right[index] ?? 0)) return (left[index] ?? 0) - (right[index] ?? 0);
+      }
+      return 0;
+    },
     STANDARD_CHARACTER_NAMES: new Set(['迪卢克', '琴', '七七', '刻晴', '莫娜', '提纳里', '迪希雅', '梦见月瑞希']),
   });
+  const versionInfoSource = fs.readFileSync(
+    path.join(projectRoot, 'assets/js/version-info.js'),
+    'utf8',
+  );
+  vm.runInContext(versionInfoSource, context, { filename: 'version-info.js' });
   const source = fs.readFileSync(
     path.join(projectRoot, 'assets/js/wish/character-overview.js'),
     'utf8',
@@ -122,6 +137,43 @@ test('pull records use the standard-first fallback and ascending indices within 
     'limitedCharacter:100',
     'limitedCharacter:500',
   ]);
+});
+
+test('dated standard records are mapped to a version half and sorted with limited records', () => {
+  const sorted = api.sortCharacterPullRecords([
+    { bannerKey: 'limitedCharacter', pullIndex: 300, pullVersion: { group: '5.7.0' } },
+    { bannerKey: 'standard', pullIndex: 80, time: '2025-05-30 12:00:00' },
+    { bannerKey: 'limitedCharacter', pullIndex: 200, pullVersion: { group: '5.6.0' } },
+  ]);
+
+  assert.deepEqual(Array.from(sorted, (record) => `${record.bannerKey}:${record.pullIndex}`), [
+    'limitedCharacter:200',
+    'standard:80',
+    'limitedCharacter:300',
+  ]);
+});
+
+test('standard records before 5.0 or without a date retain the standard-first fallback', () => {
+  const sorted = api.sortCharacterPullRecords([
+    { bannerKey: 'limitedCharacter', pullIndex: 100, pullVersion: { group: '5.0.0' } },
+    { bannerKey: 'standard', pullIndex: 90, time: '2024-08-27 23:59:59' },
+    { bannerKey: 'standard', pullIndex: 40, time: null },
+  ]);
+
+  assert.deepEqual(Array.from(sorted, (record) => `${record.bannerKey}:${record.pullIndex}`), [
+    'standard:40',
+    'standard:90',
+    'limitedCharacter:100',
+  ]);
+});
+
+test('limited records keep pull-index order when some version groups are missing', () => {
+  const sorted = api.sortCharacterPullRecords([
+    { bannerKey: 'limitedCharacter', pullIndex: 200, pullVersion: { group: '5.6.0' } },
+    { bannerKey: 'limitedCharacter', pullIndex: 100, pullVersion: null },
+  ]);
+
+  assert.deepEqual(Array.from(sorted, (record) => record.pullIndex), [100, 200]);
 });
 
 test('missing limited version labels use the agreed fallback', () => {

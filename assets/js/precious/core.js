@@ -9,12 +9,6 @@ const loadSampleTrigger = document.querySelector('#load-sample');
 const clearLocalDataTrigger = document.querySelector('#clear-local-data');
 const currentFileLabel = document.querySelector('#current-file-label');
 const dirtyIndicator = document.querySelector('#dirty-indicator');
-const preciousVersionDialog = document.querySelector('#precious-version-dialog');
-const preciousVersionForm = document.querySelector('#precious-version-form');
-const preciousVersionTitle = document.querySelector('#precious-version-title');
-const preciousVersionLabelInput = document.querySelector('#precious-version-label-input');
-const preciousVersionSortKeyInput = document.querySelector('#precious-version-sort-key-input');
-const preciousVersionDeleteBtn = document.querySelector('#precious-version-delete');
 const preciousIncomeDialog = document.querySelector('#precious-income-dialog');
 const preciousIncomeForm = document.querySelector('#precious-income-form');
 const preciousIncomeDeleteBtn = document.querySelector('#precious-income-delete');
@@ -51,6 +45,7 @@ const PRECIOUS_STORAGE_KEY = 'gachaHistory.preciousOnly.data.v8';
 const PRECIOUS_STORAGE_META_KEY = 'gachaHistory.preciousOnly.meta.v8';
 const PRECIOUS_STORAGE_BASELINE_KEY = 'gachaHistory.preciousOnly.baseline.v8';
 const PRECIOUS_DATA_TYPE = 'precious-resources';
+const PRECIOUS_SCHEMA_VERSION = 2;
 const PRECIOUS_MATERIALS = [
   { key: 'sanctifyingUnction', label: '祝圣之霜' },
   { key: 'sanctifyingEssence', label: '启圣之尘' },
@@ -70,27 +65,6 @@ const PRECIOUS_OTHER_INCOME_SOURCE_OPTIONS = {
   sanctifyingEssence: ['砺行修远', '地区探索', '庆典', '其他'],
 };
 const PRECIOUS_INCOME_SOURCE_SORT_ORDER = ['extraction', 'nether', '剧诗', '地区探索', 'bp', '砺行修远', '庆典', '其他'];
-const PRECIOUS_VERSION_GROUPS = {
-  '5.x': [
-    { label: '5.0', sortKey: '5.0' },
-    { label: '5.1', sortKey: '5.1' },
-    { label: '5.2', sortKey: '5.2' },
-    { label: '5.3', sortKey: '5.3' },
-    { label: '5.4', sortKey: '5.4' },
-    { label: '5.5', sortKey: '5.5' },
-    { label: '5.6', sortKey: '5.6' },
-    { label: '5.7', sortKey: '5.7' },
-    { label: '5.8', sortKey: '5.8' },
-  ],
-  '6.x': [
-    { label: '月之一', sortKey: '6.0' },
-    { label: '月之二', sortKey: '6.1' },
-    { label: '月之三', sortKey: '6.2' },
-    { label: '月之四', sortKey: '6.3' },
-    { label: '月之五', sortKey: '6.4' },
-    { label: '月之六', sortKey: '6.5' },
-  ],
-};
 const ARTIFACT_SLOT_OPTIONS = ['生之花', '死之羽', '时之沙', '空之杯', '理之冠'];
 const ARTIFACT_MAIN_STATS_BY_SLOT = {
   生之花: ['生命'],
@@ -115,7 +89,6 @@ let currentPreciousData = null;
 let baselinePreciousData = null;
 let currentPreciousFileName = '未加载';
 let preciousDirty = false;
-let preciousVersionEditing = null;
 let preciousIncomeEditing = null;
 let preciousExpenseEditing = null;
 let preciousIncomeSelection = { group: '', versionId: '' };
@@ -169,12 +142,11 @@ function updateDirtyIndicator() {
   if (dirtyIndicator) dirtyIndicator.hidden = !preciousDirty;
 }
 function syncBodyDialogState() {
-  const dialogs = [preciousVersionDialog, preciousIncomeDialog, preciousExpenseDialog, versionPickerDialog];
+  const dialogs = [preciousIncomeDialog, preciousExpenseDialog, versionPickerDialog];
   const anyOpen = dialogs.some((dialog) => Boolean(dialog?.open));
   document.documentElement.classList.toggle('dialog-open', anyOpen);
   document.body.classList.toggle('dialog-open', anyOpen);
 }
-function closePreciousVersionDialog() { if (!preciousVersionDialog?.open) return; preciousVersionDialog.close(); syncBodyDialogState(); preciousVersionEditing = null; }
 function closePreciousIncomeDialog() { if (!preciousIncomeDialog?.open) return; preciousIncomeDialog.close(); syncBodyDialogState(); preciousIncomeEditing = null; draftIncomeVersionEntries = []; }
 function closePreciousExpenseDialog() { if (!preciousExpenseDialog?.open) return; preciousExpenseDialog.close(); syncBodyDialogState(); preciousExpenseEditing = null; }
 function checkStorageAvailability() {
@@ -188,15 +160,6 @@ function checkStorageAvailability() {
   }
 }
 function cloneData(data) { return JSON.parse(JSON.stringify(data)); }
-function buildDefaultPreciousVersions() {
-  const versions = [];
-  Object.entries(PRECIOUS_VERSION_GROUPS).forEach(([groupName, items], groupIndex) => {
-    items.forEach((item, index) => {
-      versions.push({ id: `default-version-${groupIndex + 1}-${index + 1}`, label: item.label, sortKey: item.sortKey, group: groupName });
-    });
-  });
-  return versions;
-}
 function buildMaterialTemplate(materialKey) {
   return {
     versionIncomeSources: cloneData(PRECIOUS_VERSION_INCOME_SOURCE_OPTIONS[materialKey] ?? []),
@@ -209,8 +172,7 @@ function buildMaterialTemplate(materialKey) {
 function buildPreciousTemplateData() {
   return {
     dataType: PRECIOUS_DATA_TYPE,
-    schemaVersion: 1,
-    versions: buildDefaultPreciousVersions(),
+    schemaVersion: PRECIOUS_SCHEMA_VERSION,
     materials: {
       sanctifyingUnction: buildMaterialTemplate('sanctifyingUnction'),
       sanctifyingEssence: buildMaterialTemplate('sanctifyingEssence'),
@@ -237,9 +199,18 @@ function normalizeVersionIncomeSourceList(materialKey, list) {
     return acc;
   }, []);
 }
-function normalizeVersionEntries(entries) {
+function normalizePreciousVersionId(versionId, legacyVersionIdMap = new Map()) {
+  const normalizedId = String(versionId ?? '').trim();
+  if (!normalizedId) return '';
+  if (GENSHIN_VERSION_INFO.getVersionById(normalizedId)) return normalizedId;
+  return legacyVersionIdMap.get(normalizedId) ?? normalizedId;
+}
+function normalizeVersionEntries(entries, legacyVersionIdMap) {
   return Array.isArray(entries)
-    ? entries.map((item) => ({ versionId: String(item?.versionId ?? '').trim(), amount: Number(item?.amount ?? 0) })).filter((item) => item.versionId)
+    ? entries.map((item) => ({
+      versionId: normalizePreciousVersionId(item?.versionId, legacyVersionIdMap),
+      amount: Number(item?.amount ?? 0),
+    })).filter((item) => item.versionId)
     : [];
 }
 function normalizeOtherIncomes(list, materialKey) {
@@ -254,11 +225,11 @@ function normalizeOtherIncomes(list, materialKey) {
     })).filter((item) => item.source)
     : [];
 }
-function normalizeExpenses(list, materialKey) {
+function normalizeExpenses(list, materialKey, legacyVersionIdMap) {
   return Array.isArray(list)
     ? list.map((item, index) => ({
       id: String(item?.id ?? `${materialKey}-expense-${index + 1}`),
-      versionId: String(item?.versionId ?? ''),
+      versionId: normalizePreciousVersionId(item?.versionId, legacyVersionIdMap),
       amount: Number(item?.amount ?? 0),
       setName: item?.setName ?? '',
       slot: item?.slot ?? '生之花',
@@ -273,15 +244,38 @@ function normalizeExpenseSetOptions(list, materialKey, expenses = []) {
   const fromExpenses = Array.isArray(expenses) ? expenses.map((item) => item?.setName).filter(Boolean) : [];
   return [...new Set([...fromList, ...fromExpenses].map((item) => String(item).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
 }
+function buildLegacyPreciousVersionIdMap(versions) {
+  const versionIdMap = new Map();
+  if (!Array.isArray(versions)) return versionIdMap;
+  versions.forEach((item, index) => {
+    const legacyId = String(item?.id ?? `version-${index + 1}`).trim();
+    if (!legacyId) return;
+    const builtInVersion = GENSHIN_VERSION_INFO.getVersionBySortKey(item?.sortKey)
+      ?? GENSHIN_VERSION_INFO.getVersionByLabel(item?.label)
+      ?? GENSHIN_VERSION_INFO.getVersionById(legacyId);
+    if (builtInVersion) versionIdMap.set(legacyId, builtInVersion.id);
+  });
+  return versionIdMap;
+}
+function assertKnownPreciousVersionIds(materials) {
+  const unknownVersionIds = new Set();
+  PRECIOUS_MATERIALS.forEach((material) => {
+    const materialData = materials[material.key];
+    materialData.versionIncomeRecords.forEach((record) => {
+      record.entries.forEach((entry) => {
+        if (!GENSHIN_VERSION_INFO.getVersionById(entry.versionId)) unknownVersionIds.add(entry.versionId);
+      });
+    });
+    materialData.expenses.forEach((expense) => {
+      if (!GENSHIN_VERSION_INFO.getVersionById(expense.versionId)) unknownVersionIds.add(expense.versionId);
+    });
+  });
+  if (unknownVersionIds.size) {
+    throw new Error(`存在无法迁移到内置版本的 versionId：${[...unknownVersionIds].join('、')}`);
+  }
+}
 function normalizePreciousResources(raw) {
-  const versions = Array.isArray(raw?.versions)
-    ? raw.versions.map((item, index) => ({
-      id: String(item?.id ?? `version-${index + 1}`),
-      label: String(item?.label ?? '').trim() || `未命名版本 ${index + 1}`,
-      sortKey: String(item?.sortKey ?? '').trim() || String(item?.label ?? '').trim() || null,
-      group: String(item?.group ?? '').trim() || inferVersionGroup(item?.sortKey, item?.label),
-    }))
-    : buildDefaultPreciousVersions();
+  const legacyVersionIdMap = buildLegacyPreciousVersionIdMap(raw?.versions);
   const materials = {};
   PRECIOUS_MATERIALS.forEach((material) => {
     const source = raw?.materials?.[material.key] ?? {};
@@ -293,23 +287,29 @@ function normalizePreciousResources(raw) {
           sourceKey: String(item?.sourceKey ?? '').trim(),
           note: item?.note ?? '',
           updateTime: item?.updateTime ?? null,
-          entries: normalizeVersionEntries(item?.entries),
+          entries: normalizeVersionEntries(item?.entries, legacyVersionIdMap),
         })).filter((item) => item.sourceKey)
         : [],
       otherIncomes: normalizeOtherIncomes(source.otherIncomes, material.key),
-      expenses: normalizeExpenses(source.expenses, material.key),
+      expenses: normalizeExpenses(source.expenses, material.key, legacyVersionIdMap),
       expenseSetOptions: normalizeExpenseSetOptions(source.expenseSetOptions, material.key, source.expenses),
     };
   });
-  return { dataType: PRECIOUS_DATA_TYPE, schemaVersion: 1, versions, materials };
+  assertKnownPreciousVersionIds(materials);
+  return { dataType: PRECIOUS_DATA_TYPE, schemaVersion: PRECIOUS_SCHEMA_VERSION, materials };
 }
 function validateAndNormalizePreciousData(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('JSON 根节点必须是对象。');
   if (raw.dataType !== undefined && raw.dataType !== PRECIOUS_DATA_TYPE) {
     throw new Error(`JSON 数据类型不匹配：贵重资源页仅支持 dataType: ${PRECIOUS_DATA_TYPE}。`);
   }
-  if (Number(raw.schemaVersion) !== 1) throw new Error('当前贵重资源页仅支持 schemaVersion: 1 的 JSON。');
-  if (!Array.isArray(raw.versions)) throw new Error('该文件不是有效的贵重资源 JSON：缺少 versions 数组。');
+  const schemaVersion = Number(raw.schemaVersion);
+  if (![1, PRECIOUS_SCHEMA_VERSION].includes(schemaVersion)) {
+    throw new Error(`当前贵重资源页仅支持 schemaVersion: 1 或 ${PRECIOUS_SCHEMA_VERSION} 的 JSON。`);
+  }
+  if (schemaVersion === 1 && !Array.isArray(raw.versions)) {
+    throw new Error('该文件不是有效的贵重资源 schemaVersion: 1 JSON：缺少 versions 数组。');
+  }
   if (!raw.materials || typeof raw.materials !== 'object' || Array.isArray(raw.materials)) {
     throw new Error('该文件不是有效的贵重资源 JSON：缺少 materials 对象。');
   }
@@ -324,13 +324,12 @@ function validateAndNormalizePreciousData(raw) {
 function buildSamplePreciousData() {
   const now = new Date().toISOString();
   return validateAndNormalizePreciousData({
-    schemaVersion: 1,
-    versions: buildDefaultPreciousVersions(),
+    schemaVersion: PRECIOUS_SCHEMA_VERSION,
     materials: {
       sanctifyingUnction: {
         versionIncomeSources: [{ key: 'extraction', label: '萃取' }, { key: 'bp', label: '纪行' }],
         versionIncomeRecords: [
-          { id: 'sample-unction-version-extraction', sourceKey: 'extraction', note: '版本周期来源示例', updateTime: now, entries: [{ versionId: 'default-version-1-6', amount: 2 }, { versionId: 'default-version-1-7', amount: 2 }] },
+          { id: 'sample-unction-version-extraction', sourceKey: 'extraction', note: '版本周期来源示例', updateTime: now, entries: [{ versionId: '5.5', amount: 2 }, { versionId: '5.6', amount: 2 }] },
         ],
         otherIncomes: [{ id: 'sample-unction-other-1', source: '其他', cycleLabel: '补发', amount: 1, note: '示例', updateTime: now }],
         expenses: [],
@@ -339,7 +338,7 @@ function buildSamplePreciousData() {
         versionIncomeSources: [{ key: 'nether', label: '幽境' }, { key: 'bp', label: '纪行' }],
         versionIncomeRecords: [],
         otherIncomes: [{ id: 'sample-essence-other-1', source: '其他', cycleLabel: '一次性获取', amount: 2, note: '', updateTime: now }],
-        expenses: [{ id: 'sample-expense-1', versionId: 'default-version-1-7', amount: 2, setName: '逐影猎人', slot: '理之冠', mainStat: '暴击', note: '测试示例', updateTime: now }],
+        expenses: [{ id: 'sample-expense-1', versionId: '5.6', amount: 2, setName: '逐影猎人', slot: '理之冠', mainStat: '暴击', note: '测试示例', updateTime: now }],
       },
     },
   });
@@ -348,11 +347,11 @@ function ensurePreciousData() { if (!currentPreciousData) currentPreciousData = 
 function getPreciousData() { return ensurePreciousData(); }
 function getPreciousMaterialData(materialKey) { return getPreciousData().materials[materialKey]; }
 function getMaterialLabel(materialKey) { return PRECIOUS_MATERIALS.find((item) => item.key === materialKey)?.label ?? materialKey; }
-function getVersionMap() { return new Map(getPreciousData().versions.map((item) => [item.id, item])); }
+function getVersionMap() { return new Map(GENSHIN_VERSION_INFO.versions.map((item) => [item.id, item])); }
 function getVersionLabel(versionId) { return getVersionMap().get(versionId)?.label ?? '未分组'; }
 function sortVersions(list) { return list.slice().sort((a, b) => compareVersionGroup(a.sortKey, b.sortKey) || a.label.localeCompare(b.label, 'zh-CN')); }
 function getOrderedMaterialExpenses(materialKey) {
-  const versionOrder = new Map(sortVersions(getPreciousData().versions).map((version, index) => [version.id, index]));
+  const versionOrder = new Map(sortVersions(GENSHIN_VERSION_INFO.versions).map((version, index) => [version.id, index]));
   return getPreciousMaterialData(materialKey).expenses
     .map((record, index) => ({ record, index }))
     .sort((left, right) => (versionOrder.get(left.record.versionId) ?? Number.MAX_SAFE_INTEGER) - (versionOrder.get(right.record.versionId) ?? Number.MAX_SAFE_INTEGER) || left.index - right.index)
@@ -460,7 +459,7 @@ function downloadJsonFile(data, filename) {
   a.remove();
   URL.revokeObjectURL(url);
 }
-function handleTemplateDownload() { downloadJsonFile(buildPreciousTemplateData(), 'precious-resources.schema-v1.template.json'); setSyncStatus('模板已下载。', 'success'); }
+function handleTemplateDownload() { downloadJsonFile(buildPreciousTemplateData(), 'precious-resources.schema-v2.template.json'); setSyncStatus('模板已下载。', 'success'); }
 function handleExport() { downloadJsonFile(cloneData(getPreciousData()), `precious-resources.${formatExportDate()}.json`); preciousDirty = false; persistPreciousSnapshot(); updateDirtyIndicator(); setSyncStatus('导出完成。', 'success'); }
 function handleClearLocalData() {
   if (!window.confirm('确定清空当前贵重资源页的本地数据吗？这不会删除你已经导出的 JSON 文件。')) return;

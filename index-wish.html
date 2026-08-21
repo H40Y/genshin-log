@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>抽卡记录</title>
     <script>
-      const wishAssetVersion = '20260820-8';
+      const wishAssetVersion = '20260821-1';
       document.write(`<link rel="stylesheet" href="./assets/css/wish.css?v=${wishAssetVersion}" />`);
     </script>
   </head>
@@ -232,8 +232,18 @@
     </script>
     <script>
       (() => {
-        const scripts = ['core', 'dashboard', 'timeline', 'character-overview', 'history', 'editor', 'import-export', 'app'];
-        document.write(scripts.map((name) => `<script src="./assets/js/wish/${name}.js?v=${wishAssetVersion}"><\/script>`).join(''));
+        const scripts = [
+          './assets/js/version-info.js',
+          './assets/js/wish/core.js',
+          './assets/js/wish/dashboard.js',
+          './assets/js/wish/timeline.js',
+          './assets/js/wish/character-overview.js',
+          './assets/js/wish/history.js',
+          './assets/js/wish/editor.js',
+          './assets/js/wish/import-export.js',
+          './assets/js/wish/app.js',
+        ];
+        document.write(scripts.map((src) => `<script src="${src}?v=${wishAssetVersion}"><\/script>`).join(''));
       })();
     </script>
   </body>

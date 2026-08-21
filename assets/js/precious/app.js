@@ -1,20 +1,19 @@
 function rerenderPrecious() {
   const data = getPreciousData();
   preciousSection.innerHTML = '';
-  const hasRecords = data.versions.length || PRECIOUS_MATERIALS.some((material) => {
+  const hasRecords = PRECIOUS_MATERIALS.some((material) => {
     const materialData = getPreciousMaterialData(material.key);
     return materialData.versionIncomeRecords.length || materialData.otherIncomes.length || materialData.expenses.length;
   });
   if (!hasRecords) {
-    preciousSection.innerHTML = `<div class="card landing-card"><div class="landing-badge">贵重资源</div><h2>现在就可以开始</h2><p>你可以直接下载模板、上传已有 JSON，或者先加载示例数据看看页面结构。若想从零录入，也可以直接从“新增版本分组”开始。</p><div class="tools-actions"><button id="empty-download-template" class="ghost-button compact-button" type="button">下载模板</button><button id="empty-load-sample" class="ghost-button compact-button" type="button">加载示例数据</button><button id="empty-add-version" class="primary-button compact-button" type="button">新增版本分组</button></div></div>`;
+    preciousSection.innerHTML = `<div class="card landing-card"><div class="landing-badge">贵重资源</div><h2>现在就可以开始</h2><p>你可以直接新增收入记录、下载模板、上传已有 JSON，或者先加载示例数据看看页面结构。</p><div class="tools-actions"><button id="empty-download-template" class="ghost-button compact-button" type="button">下载模板</button><button id="empty-load-sample" class="ghost-button compact-button" type="button">加载示例数据</button><button id="empty-add-income" class="primary-button compact-button" type="button">新增收入</button></div></div>`;
     preciousSection.querySelector('#empty-download-template')?.addEventListener('click', handleTemplateDownload);
     preciousSection.querySelector('#empty-load-sample')?.addEventListener('click', handleLoadSample);
-    preciousSection.querySelector('#empty-add-version')?.addEventListener('click', openCreatePreciousVersionDialog);
+    preciousSection.querySelector('#empty-add-income')?.addEventListener('click', () => openCreatePreciousIncomeDialog());
     return;
   }
   const statGrid = document.createElement('div'); statGrid.className = 'grid cards-2 precious-stat-shell'; PRECIOUS_MATERIALS.forEach((material) => statGrid.appendChild(buildPreciousStatCard(material.key))); preciousSection.appendChild(statGrid);
   PRECIOUS_MATERIALS.forEach((material) => preciousSection.appendChild(buildPreciousMaterialBlock(material.key)));
-  const settingsSection = document.createElement('section'); settingsSection.className = 'section settings-section'; settingsSection.appendChild(buildVersionsCard()); preciousSection.appendChild(settingsSection);
 }
 
 function bindDialogBackdropClose(dialog, onClose) {
@@ -55,20 +54,6 @@ uploadInput?.addEventListener('change', async () => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error); setSyncStatus(`加载失败：${msg}`, 'error'); alert(`加载失败：${msg}`);
   } finally { uploadInput.value = ''; }
-});
-
-document.querySelector('[data-dialog-cancel="version"]')?.addEventListener('click', closePreciousVersionDialog);
-bindDialogBackdropClose(preciousVersionDialog, closePreciousVersionDialog);
-preciousVersionDialog?.addEventListener('close', syncBodyDialogState);
-preciousVersionDeleteBtn?.addEventListener('click', () => {
-  if (!window.confirm('确定删除这个版本分组吗？')) return;
-  try { deletePreciousVersion(); closePreciousVersionDialog(); setSyncStatus('版本分组已删除；如需保留，请导出 JSON。', 'success'); }
-  catch (error) { const msg = error instanceof Error ? error.message : String(error); setSyncStatus(`删除失败：${msg}`, 'error'); alert(`删除失败：${msg}`); }
-});
-preciousVersionForm?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  try { savePreciousVersion(); closePreciousVersionDialog(); setSyncStatus('版本分组已保存；如需保留，请导出 JSON。', 'success'); }
-  catch (error) { const msg = error instanceof Error ? error.message : String(error); setSyncStatus(`保存失败：${msg}`, 'error'); alert(`保存失败：${msg}`); }
 });
 
 document.querySelector('[data-dialog-cancel="income"]')?.addEventListener('click', closePreciousIncomeDialog);

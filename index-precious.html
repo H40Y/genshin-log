@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>贵重资源</title>
     <script>
-      const preciousAssetVersion = '20260820-1';
+      const preciousAssetVersion = '20260821-1';
       document.write(`<link rel="stylesheet" href="./assets/css/precious.css?v=${preciousAssetVersion}" />`);
     </script>
   </head>
@@ -45,29 +45,6 @@
     </div>
 
     <input id="upload-input" type="file" accept="application/json,.json" hidden />
-
-    <dialog id="precious-version-dialog" class="edit-dialog">
-      <form method="dialog" id="precious-version-form" class="edit-form">
-        <div class="dialog-header">
-          <h3 id="precious-version-title">新增版本分组</h3>
-        </div>
-        <div class="form-grid">
-          <label>
-            <span>版本名</span>
-            <input id="precious-version-label-input" name="label" placeholder="如 5.6 / 月之一" required />
-          </label>
-          <label>
-            <span>sortKey</span>
-            <input id="precious-version-sort-key-input" name="sortKey" placeholder="如 5.6 / 6.0" required />
-          </label>
-        </div>
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button mobile-dialog-cancel" data-dialog-cancel="version">取消</button>
-          <button type="button" class="ghost-button danger-button" id="precious-version-delete">删除</button>
-          <button type="submit" class="primary-button">保存</button>
-        </div>
-      </form>
-    </dialog>
 
     <dialog id="precious-income-dialog" class="edit-dialog">
       <form method="dialog" id="precious-income-form" class="edit-form">
@@ -235,8 +212,14 @@
     </script>
     <script>
       (() => {
-        const scripts = ['core', 'view', 'editor', 'app'];
-        document.write(scripts.map((name) => `<script src="./assets/js/precious/${name}.js?v=${preciousAssetVersion}"><\/script>`).join(''));
+        const scripts = [
+          './assets/js/version-info.js',
+          './assets/js/precious/core.js',
+          './assets/js/precious/view.js',
+          './assets/js/precious/editor.js',
+          './assets/js/precious/app.js',
+        ];
+        document.write(scripts.map((src) => `<script src="${src}?v=${preciousAssetVersion}"><\/script>`).join(''));
       })();
     </script>
   </body>

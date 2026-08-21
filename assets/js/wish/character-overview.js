@@ -7,6 +7,21 @@ let currentCharacterOverviewPage = 1;
 let showStandardCharacters = CHARACTER_OVERVIEW_DEFAULT_SHOW_STANDARD;
 
 function compareCharacterPullRecords(a, b) {
+  const aVersionGroup = getCharacterPullVersionGroup(a);
+  const bVersionGroup = getCharacterPullVersionGroup(b);
+  const aUsesStandardFallback = a?.bannerKey === 'standard' && !aVersionGroup;
+  const bUsesStandardFallback = b?.bannerKey === 'standard' && !bVersionGroup;
+  if (aUsesStandardFallback !== bUsesStandardFallback) return aUsesStandardFallback ? -1 : 1;
+
+  if (a?.bannerKey === b?.bannerKey) {
+    return Number(a.pullIndex) - Number(b.pullIndex);
+  }
+
+  if (aVersionGroup && bVersionGroup) {
+    const versionDifference = compareVersionGroup(aVersionGroup, bVersionGroup);
+    if (versionDifference !== 0) return versionDifference;
+  }
+
   const bannerOrder = {
     standard: 0,
     limitedCharacter: 1,
@@ -16,8 +31,14 @@ function compareCharacterPullRecords(a, b) {
   return Number(a.pullIndex) - Number(b.pullIndex);
 }
 
-// Keep cross-banner ordering behind one function so a unified chronological
-// strategy can replace the current standard-first fallback later.
+function getCharacterPullVersionGroup(record) {
+  if (record?.bannerKey === 'standard') {
+    return GENSHIN_VERSION_INFO.getVersionPhaseByDate(record.time)?.phase.group ?? null;
+  }
+  const group = String(record?.pullVersion?.group ?? '').trim();
+  return group || null;
+}
+
 function sortCharacterPullRecords(records) {
   return records.slice().sort(compareCharacterPullRecords);
 }
@@ -44,6 +65,7 @@ function buildStandardPullRecords(history) {
         itemName: item.itemName,
         itemType: item.itemType,
         pullIndex: item.pullIndex,
+        time: item.time ?? null,
         pullVersion: null,
       };
     });
@@ -62,6 +84,7 @@ function buildLimitedCharacterPullRecords(history) {
         itemName: item.itemName,
         itemType: item.itemType,
         pullIndex: item.pullIndex,
+        time: item.time ?? null,
         pullVersion: item.pullVersion ?? null,
       };
       if (item.resultType === 'up') previousUpPullIndex = Number(item.pullIndex);
@@ -86,6 +109,7 @@ function buildCharacterOverview(data) {
         bannerKey: record.bannerKey,
         drawCount: record.drawCount,
         pullIndex: record.pullIndex,
+        time: record.time,
         pullVersion: record.pullVersion,
       });
     });

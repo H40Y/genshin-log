@@ -202,34 +202,6 @@ function syncExpenseSetNameInput() {
 function findPreciousVersionIncomeRecord(materialKey, recordId) { return getPreciousMaterialData(materialKey).versionIncomeRecords.find((item) => item.id === recordId) ?? null; }
 function findPreciousOtherIncome(materialKey, recordId) { return getPreciousMaterialData(materialKey).otherIncomes.find((item) => item.id === recordId) ?? null; }
 function findPreciousExpense(materialKey, recordId) { return getPreciousMaterialData(materialKey).expenses.find((item) => item.id === recordId) ?? null; }
-function ensurePreciousVersionsExist() { ensurePreciousData(); if (!getPreciousData().versions.length) throw new Error('请先新增至少一个版本分组。'); }
-function openCreatePreciousVersionDialog() {
-  ensurePreciousData(); preciousVersionEditing = { mode: 'create', versionId: null }; preciousVersionTitle.textContent = '新增版本分组'; preciousVersionLabelInput.value = ''; preciousVersionSortKeyInput.value = ''; preciousVersionDeleteBtn.style.display = 'none'; preciousVersionDialog.showModal(); syncBodyDialogState();
-}
-function openEditPreciousVersionDialog(versionId) {
-  const version = getPreciousData().versions.find((item) => item.id === versionId); if (!version) return;
-  preciousVersionEditing = { mode: 'edit', versionId }; preciousVersionTitle.textContent = '修改版本分组'; preciousVersionLabelInput.value = version.label; preciousVersionSortKeyInput.value = version.sortKey ?? ''; preciousVersionDeleteBtn.style.display = ''; preciousVersionDialog.showModal(); syncBodyDialogState();
-}
-function savePreciousVersion() {
-  const label = preciousVersionLabelInput.value.trim(); const sortKey = preciousVersionSortKeyInput.value.trim();
-  if (!label) throw new Error('版本标签不能为空。'); if (!sortKey) throw new Error('sortKey 不能为空。');
-  const versions = getPreciousData().versions; const group = inferVersionGroup(sortKey, label);
-  if (preciousVersionEditing.mode === 'create') versions.push({ id: buildPreciousRecordId('precious-version'), label, sortKey, group });
-  else {
-    const target = versions.find((item) => item.id === preciousVersionEditing.versionId); if (!target) throw new Error('未找到要修改的版本分组。');
-    target.label = label; target.sortKey = sortKey; target.group = group;
-  }
-  preciousDirty = true; persistPreciousSnapshot(); rerenderPrecious(); updateDirtyIndicator();
-}
-function deletePreciousVersion() {
-  const versionId = preciousVersionEditing.versionId;
-  const usedCount = PRECIOUS_MATERIALS.reduce((sum, material) => {
-    const data = getPreciousMaterialData(material.key);
-    return sum + data.versionIncomeRecords.reduce((inner, record) => inner + record.entries.filter((item) => item.versionId === versionId).length, 0) + data.expenses.filter((item) => item.versionId === versionId).length;
-  }, 0);
-  if (usedCount > 0) throw new Error('该版本分组已被版本来源收入或支出记录使用，暂不允许删除。');
-  currentPreciousData.versions = currentPreciousData.versions.filter((item) => item.id !== versionId); preciousDirty = true; persistPreciousSnapshot(); rerenderPrecious(); updateDirtyIndicator();
-}
 function openCreatePreciousIncomeDialog(defaultMaterialKey = 'sanctifyingUnction') {
   preciousIncomeEditing = { mode: 'create', type: 'version', materialKey: defaultMaterialKey, recordId: null };
   draftIncomeVersionEntries = []; preciousIncomeSelection = { group: getVersionGroups()[0]?.[0] ?? '', versionId: '' };
@@ -294,7 +266,7 @@ function deletePreciousIncome() {
   preciousDirty = true; persistPreciousSnapshot(); rerenderPrecious(); updateDirtyIndicator();
 }
 function openCreatePreciousExpenseDialog(defaultMaterialKey = 'sanctifyingUnction') {
-  ensurePreciousVersionsExist(); preciousExpenseEditing = { mode: 'create', materialKey: defaultMaterialKey, recordId: null };
+  preciousExpenseEditing = { mode: 'create', materialKey: defaultMaterialKey, recordId: null };
   const latestVersionId = getLatestExpenseVersionId(defaultMaterialKey);
   const latestVersion = getVersionMap().get(latestVersionId);
   preciousExpenseSelection = { group: latestVersion?.group ?? getVersionGroups()[0]?.[0] ?? '', versionId: latestVersionId };
