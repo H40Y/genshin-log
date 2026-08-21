@@ -1,18 +1,19 @@
 function renderEmptyState() {
   overviewSection.innerHTML = `
     <div class="card landing-card">
-      <div class="landing-badge">纯静态模式</div>
-      <h2>上传符合规范的 JSON 后开始查看</h2>
-      <p>
-        你可以直接双击打开 <code>index.html</code>，然后上传 <code>schemaVersion: 4</code> 的 wish-data JSON。
-      </p>
-      <ul class="landing-list">
-        <li>支持页面内修改 5★ 记录与总抽数</li>
-        <li>支持导入 UIGF 自动更新已有数据</li>
-        <li>修改只发生在当前页面数据里，想保留请手动导出 JSON</li>
-      </ul>
+      <div class="landing-badge">抽卡记录</div>
+      <h2>现在就可以开始</h2>
+      <p>你可以上传已有的抽卡记录、下载模板开始整理，或者先加载示例数据看看页面结构。</p>
+      <div class="tools-actions landing-actions">
+        <button id="empty-download-template" class="ghost-button compact-button" type="button">下载模板</button>
+        <button id="empty-load-sample" class="ghost-button compact-button" type="button">加载示例数据</button>
+        <button id="empty-upload-data" class="primary-button compact-button" type="button">上传抽卡记录</button>
+      </div>
     </div>
   `;
+  overviewSection.querySelector('#empty-download-template')?.addEventListener('click', () => templateBtn?.click());
+  overviewSection.querySelector('#empty-load-sample')?.addEventListener('click', () => sampleBtn?.click());
+  overviewSection.querySelector('#empty-upload-data')?.addEventListener('click', () => uploadBtn?.click());
   bannerSection.innerHTML = '';
   timelineSection.innerHTML = '';
   characterOverviewSection.innerHTML = '';

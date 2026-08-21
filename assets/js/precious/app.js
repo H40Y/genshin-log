@@ -6,7 +6,7 @@ function rerenderPrecious() {
     return materialData.versionIncomeRecords.length || materialData.otherIncomes.length || materialData.expenses.length;
   });
   if (!hasRecords) {
-    preciousSection.innerHTML = `<div class="card landing-card"><div class="landing-badge">贵重资源</div><h2>现在就可以开始</h2><p>你可以直接新增收入记录、下载模板、上传已有 JSON，或者先加载示例数据看看页面结构。</p><div class="tools-actions"><button id="empty-download-template" class="ghost-button compact-button" type="button">下载模板</button><button id="empty-load-sample" class="ghost-button compact-button" type="button">加载示例数据</button><button id="empty-add-income" class="primary-button compact-button" type="button">新增收入</button></div></div>`;
+    preciousSection.innerHTML = `<div class="card landing-card"><div class="landing-badge">贵重资源</div><h2>现在就可以开始</h2><p>你可以直接新增收入记录、下载模板、上传已有 JSON，或者先加载示例数据看看页面结构。</p><div class="tools-actions landing-actions"><button id="empty-download-template" class="ghost-button compact-button" type="button">下载模板</button><button id="empty-load-sample" class="ghost-button compact-button" type="button">加载示例数据</button><button id="empty-add-income" class="primary-button compact-button" type="button">新增收入</button></div></div>`;
     preciousSection.querySelector('#empty-download-template')?.addEventListener('click', handleTemplateDownload);
     preciousSection.querySelector('#empty-load-sample')?.addEventListener('click', handleLoadSample);
     preciousSection.querySelector('#empty-add-income')?.addEventListener('click', () => openCreatePreciousIncomeDialog());

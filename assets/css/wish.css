@@ -130,6 +130,9 @@ code {
   color: var(--muted);
   line-height: 1.8;
 }
+.landing-actions {
+  margin-top: 20px;
+}
 .landing-badge {
   display: inline-flex;
   align-items: center;
