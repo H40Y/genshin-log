@@ -55,3 +55,10 @@ test('dates map to the correct built-in version half at boundaries', () => {
   assert.equal(versionInfo.getVersionPhaseByDate('2026-08-21 12:00:00').version.id, '7.0');
   assert.equal(versionInfo.getVersionPhaseByDate('2024-08-27 23:59:59'), null);
 });
+
+test('version groups map back to their canonical label and half', () => {
+  const matched = versionInfo.getVersionPhaseByGroup('6.6.5');
+  assert.equal(matched.version.label, '月之七');
+  assert.equal(matched.phase.label, '下半');
+  assert.equal(versionInfo.getVersionPhaseByGroup('6.8.0'), null);
+});

@@ -139,14 +139,14 @@ pullIndex = 当前池子 UIGF 记录数 - 该记录在当前池子中的文件�
   "resultType": "up/off-banner/unknown",
   "capturingRadiance": null,
   "pullVersion": {
-    "label": "导入弹窗内补充",
-    "group": "导入弹窗内补充"
+    "label": "根据 UIGF 时间和内置版本自动推断",
+    "group": "根据 UIGF 时间和内置版本自动推断"
   },
   "source": "auto"
 }
 ```
 
-常驻池新增 5 星的 `resultType` 会设为 `off-banner`。限定池新增 5 星会先根据常驻 5 星名单自动判定 `up` 或 `off-banner`，并在导入弹窗的“待补充信息”区域允许手动修改结果、版本标签、版本分组；限定角色池还可以补充 `capturingRadiance`。
+常驻池新增 5 星的 `resultType` 会设为 `off-banner`。限定池新增 5 星会先根据常驻 5 星名单自动判定 `up` 或 `off-banner`，并根据 UIGF `time` 自动匹配内置版本及上下半期。导入弹窗的“待补充信息”区域使用“版本阶段”下拉框复核或调整，不再允许分别手填版本标签和版本分组；限定角色池还可以补充 `capturingRadiance`。
 
 ### 修补已有 5 星记录
 
@@ -164,7 +164,7 @@ UIGF 应用前建议在“待补充信息”区域检查：
 
 - 限定池新增 5 星的 `resultType` 自动判定是否正确。
 - 限定角色池是否需要补充 `capturingRadiance`。
-- 限定池新增 5 星的 `pullVersion` 是否完整。
+- 限定池新增 5 星自动匹配的“版本阶段”是否正确；超出内置版本日期范围时必须从下拉框选择。
 - 4 星冲突是否符合预期。
 - `totalPulls` 是否符合实际账号记录。
 

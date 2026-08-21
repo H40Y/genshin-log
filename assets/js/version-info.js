@@ -112,6 +112,17 @@
     return { date, version, phase };
   }
 
+  function getVersionPhaseByGroup(group) {
+    const normalizedGroup = String(group ?? '').trim();
+    if (!normalizedGroup) return null;
+    for (const version of versions) {
+      const phase = [version.firstHalf, version.secondHalf]
+        .find((item) => item.group === normalizedGroup);
+      if (phase) return { version, phase };
+    }
+    return null;
+  }
+
   function getCurrentVersion(value = new Date()) {
     const date = normalizeDate(value);
     if (!date) return null;
@@ -128,6 +139,7 @@
     getVersionBySortKey,
     getVersionByLabel,
     getVersionPhaseByDate,
+    getVersionPhaseByGroup,
     getCurrentVersion,
   });
 }(globalThis));

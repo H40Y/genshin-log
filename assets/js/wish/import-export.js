@@ -138,6 +138,15 @@ function buildTimedOffsetCheck(schema, uigfList, gachaType) {
   };
 }
 
+function getPullVersionByTime(time) {
+  const matched = GENSHIN_VERSION_INFO.getVersionPhaseByDate(time);
+  if (!matched) return null;
+  return {
+    label: matched.version.label,
+    group: matched.phase.group,
+  };
+}
+
 function buildDiff(schema, uigfList, gachaType) {
   const bannerKey = BANNER_KEY_BY_GACHA_TYPE[gachaType];
   const banner = schema.wishData[bannerKey];
@@ -201,7 +210,7 @@ function buildDiff(schema, uigfList, gachaType) {
           time: row.time,
           resultType: inferLimitedResultType(bannerKey, row.name, row.item_type),
           capturingRadiance: null,
-          pullVersion: null,
+          pullVersion: isLimitedBanner(bannerKey) ? getPullVersionByTime(row.time) : null,
           originalLocalIndex: row.originalLocalIndex,
           reversedLocalIndex: row.reversedLocalIndex,
         });
@@ -334,6 +343,19 @@ function renderCapturingRadianceOptions(value) {
   }).join('');
 }
 
+function renderVersionPhaseOptions(selectedGroup = '') {
+  const options = GENSHIN_VERSION_INFO.versions.flatMap((version) => (
+    [version.firstHalf, version.secondHalf].map((phase) => ({
+      value: phase.group,
+      label: `${version.label}·${phase.label}`,
+    }))
+  ));
+  return [
+    `<option value=""${selectedGroup ? '' : ' selected'}>请选择版本阶段</option>`,
+    ...options.map((option) => `<option value="${option.value}"${selectedGroup === option.value ? ' selected' : ''}>${option.label}</option>`),
+  ].join('');
+}
+
 function renderUigfSupplementalSection(review) {
   const items = getUigfSupplementalItems(review);
   if (!items.length) {
@@ -346,7 +368,6 @@ function renderUigfSupplementalSection(review) {
   }
 
   const rows = items.map(({ diff, item, itemIndex }) => {
-    const versionLabel = item.pullVersion?.label ?? '';
     const versionGroup = item.pullVersion?.group ?? '';
     const captureControl = diff.bannerKey === 'limitedCharacter'
       ? `<select data-uigf-field="capturingRadiance" data-banner="${diff.bannerKey}" data-index="${itemIndex}">${renderCapturingRadianceOptions(item.capturingRadiance)}</select>`
@@ -363,8 +384,11 @@ function renderUigfSupplementalSection(review) {
             ${renderResultTypeOptions(item.resultType ?? 'unknown')}
           </select>
         </td>
-        <td><input data-uigf-field="pullVersionLabel" data-banner="${diff.bannerKey}" data-index="${itemIndex}" value="${escapeHtml(versionLabel)}" placeholder="如 5.6 / 月之一" /></td>
-        <td><input data-uigf-field="pullVersionGroup" data-banner="${diff.bannerKey}" data-index="${itemIndex}" value="${escapeHtml(versionGroup)}" placeholder="如 5.6.0 / 5.6.5" /></td>
+        <td>
+          <select data-uigf-field="pullVersionGroup" data-banner="${diff.bannerKey}" data-index="${itemIndex}">
+            ${renderVersionPhaseOptions(versionGroup)}
+          </select>
+        </td>
         <td>${captureControl}</td>
       </tr>
     `;
@@ -375,12 +399,8 @@ function renderUigfSupplementalSection(review) {
       <h4>待补充信息</h4>
       <div class="uigf-supplemental-toolbar">
         <label>
-          <span>批量版本标签</span>
-          <input id="uigf-batch-version-label" placeholder="如 5.6 / 月之一" />
-        </label>
-        <label>
-          <span>批量版本分组</span>
-          <input id="uigf-batch-version-group" placeholder="如 5.6.0 / 5.6.5" />
+          <span>批量版本阶段</span>
+          <select id="uigf-batch-version-group">${renderVersionPhaseOptions()}</select>
         </label>
         <button type="button" class="ghost-button compact-button" id="uigf-batch-fill-empty">填充空白</button>
         <button type="button" class="ghost-button compact-button" id="uigf-batch-fill-all">覆盖全部</button>
@@ -394,8 +414,7 @@ function renderUigfSupplementalSection(review) {
               <th>名称</th>
               <th>类型</th>
               <th>结果</th>
-              <th>版本标签</th>
-              <th>版本分组</th>
+              <th>版本阶段</th>
               <th>捕获明光</th>
             </tr>
           </thead>
@@ -408,14 +427,10 @@ function renderUigfSupplementalSection(review) {
 
 function bindUigfSupplementalControls() {
   const fillVersionInputs = (overwrite) => {
-    const labelValue = uigfReviewContent.querySelector('#uigf-batch-version-label')?.value.trim() ?? '';
     const groupValue = uigfReviewContent.querySelector('#uigf-batch-version-group')?.value.trim() ?? '';
 
-    uigfReviewContent.querySelectorAll('[data-uigf-field="pullVersionLabel"]').forEach((input) => {
-      if (overwrite || !input.value.trim()) input.value = labelValue;
-    });
-    uigfReviewContent.querySelectorAll('[data-uigf-field="pullVersionGroup"]').forEach((input) => {
-      if (overwrite || !input.value.trim()) input.value = groupValue;
+    uigfReviewContent.querySelectorAll('[data-uigf-field="pullVersionGroup"]').forEach((select) => {
+      if (overwrite || !select.value.trim()) select.value = groupValue;
     });
   };
 
@@ -428,16 +443,16 @@ function syncUigfSupplementalInputs(review) {
   for (const { diff, item, itemIndex } of items) {
     const fieldSelector = (field) => `[data-uigf-field="${field}"][data-banner="${diff.bannerKey}"][data-index="${itemIndex}"]`;
     const resultType = uigfReviewContent.querySelector(fieldSelector('resultType'))?.value ?? 'unknown';
-    const label = uigfReviewContent.querySelector(fieldSelector('pullVersionLabel'))?.value.trim() ?? '';
     const group = uigfReviewContent.querySelector(fieldSelector('pullVersionGroup'))?.value.trim() ?? '';
     const captureValue = uigfReviewContent.querySelector(fieldSelector('capturingRadiance'))?.value ?? '';
+    const versionPhase = GENSHIN_VERSION_INFO.getVersionPhaseByGroup(group);
 
-    if (!label || !group) {
-      throw new Error(`请补充 ${diff.bannerLabel} ${item.pullIndex} 抽 ${item.itemName} 的版本标签和版本分组。`);
+    if (!versionPhase) {
+      throw new Error(`请选择 ${diff.bannerLabel} ${item.pullIndex} 抽 ${item.itemName} 的版本阶段。`);
     }
 
     item.resultType = resultType;
-    item.pullVersion = { label, group };
+    item.pullVersion = { label: versionPhase.version.label, group: versionPhase.phase.group };
     item.capturingRadiance = diff.bannerKey === 'limitedCharacter'
       ? (captureValue === '' ? null : captureValue === 'true')
       : null;

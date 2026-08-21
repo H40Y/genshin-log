@@ -223,7 +223,7 @@ code {
 
 .uigf-supplemental-toolbar {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(180px, 1fr) auto auto;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
   gap: 10px;
   align-items: end;
   margin-bottom: 12px;
@@ -245,7 +245,8 @@ code {
 }
 .uigf-supplemental-table input,
 .uigf-supplemental-table select,
-.uigf-supplemental-toolbar input {
+.uigf-supplemental-toolbar input,
+.uigf-supplemental-toolbar select {
   width: 100%;
   min-width: 120px;
   padding: 9px 10px;

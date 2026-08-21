@@ -44,8 +44,8 @@ function loadPageDataApi(files, exposedFunctions) {
 }
 
 const wish = loadPageDataApi(
-  ['assets/js/wish/core.js', 'assets/js/wish/import-export.js'],
-  ['buildTemplateData', 'validateAndNormalizeData'],
+  ['assets/js/version-info.js', 'assets/js/wish/core.js', 'assets/js/wish/import-export.js'],
+  ['buildDiff', 'buildTemplateData', 'getPullVersionByTime', 'renderVersionPhaseOptions', 'validateAndNormalizeData'],
 );
 const precious = loadPageDataApi(
   ['assets/js/version-info.js', 'assets/js/precious/core.js'],
@@ -145,4 +145,29 @@ test('precious migration rejects referenced versions outside the built-in catalo
   };
 
   assert.throws(() => precious.validateAndNormalizePreciousData(legacy), /无法迁移到内置版本/);
+});
+
+test('UIGF limited five-stars infer their built-in version phase from time', () => {
+  const diff = wish.buildDiff(wish.buildTemplateData(), [
+    {
+      gacha_type: '301',
+      rank_type: '5',
+      name: '示例角色',
+      item_type: '角色',
+      time: '2025-05-30 12:00:00',
+    },
+  ], '301');
+
+  assert.deepEqual(
+    { ...diff.newFiveStars[0].pullVersion },
+    { label: '5.6', group: '5.6.5' },
+  );
+});
+
+test('UIGF review version choices come only from the built-in catalog', () => {
+  const options = wish.renderVersionPhaseOptions('6.6.5');
+  assert.match(options, /value="6\.6\.5" selected>月之七·下半/);
+  assert.match(options, /value="7\.8\.5">7\.8·下半/);
+  assert.doesNotMatch(options, /<input/);
+  assert.equal(wish.getPullVersionByTime('2024-08-27 23:59:59'), null);
 });
