@@ -864,6 +864,10 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
   padding: 8px 12px;
   cursor: pointer;
   font: inherit;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
 }
 .table-button,
@@ -874,6 +878,11 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 .primary-button {
   background: var(--accent-soft);
   color: var(--text);
+}
+.compact-button {
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 13px;
 }
 .action-button.is-highlighted {
   background: var(--accent-soft);
