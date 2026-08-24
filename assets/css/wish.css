@@ -204,7 +204,7 @@ code {
   position: relative;
   padding-right: 40px;
 }
-.meta-box-corner-button {
+.ghost-button.meta-box-corner-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -284,7 +284,24 @@ code {
   gap: 14px;
   align-items: flex-end;
   overflow-x: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(142, 166, 255, 0.58) rgba(255, 255, 255, 0.05);
   padding-bottom: 8px;
+}
+.timeline-track-content::-webkit-scrollbar {
+  height: 8px;
+}
+.timeline-track-content::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.timeline-track-content::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(142, 166, 255, 0.58);
+}
+.timeline-track-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(142, 166, 255, 0.78);
 }
 .timeline-version-column {
   min-width: fit-content;

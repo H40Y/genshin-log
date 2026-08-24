@@ -825,6 +825,33 @@ function createAverageUpCurveChart(seriesList) {
   return chart;
 }
 
+function keepTimelineTrackAtLatest(content) {
+  const endThreshold = 2;
+  let shouldStickToEnd = true;
+
+  const getMaxScrollLeft = () => Math.max(0, content.scrollWidth - content.clientWidth);
+  const scrollToEnd = () => {
+    if (!shouldStickToEnd) return;
+    content.scrollLeft = getMaxScrollLeft();
+  };
+
+  content.addEventListener('scroll', () => {
+    shouldStickToEnd = getMaxScrollLeft() - content.scrollLeft <= endThreshold;
+  }, { passive: true });
+
+  const resizeObserver = new ResizeObserver(() => {
+    if (!document.body.contains(content)) {
+      resizeObserver.disconnect();
+      return;
+    }
+    requestAnimationFrame(scrollToEnd);
+  });
+  resizeObserver.observe(content);
+  Array.from(content.children).forEach((child) => resizeObserver.observe(child));
+
+  scrollToEnd();
+}
+
 function stabilizeTimelineRender() {
   const blocks = timelineSection.querySelectorAll('.timeline-version-block');
   const trackContents = timelineSection.querySelectorAll('.timeline-track-content');
@@ -840,9 +867,7 @@ function stabilizeTimelineRender() {
       blocks.forEach((block) => {
         block.style.transform = '';
       });
-      trackContents.forEach((content) => {
-        content.scrollLeft = Math.max(0, content.scrollWidth - content.clientWidth);
-      });
+      trackContents.forEach(keepTimelineTrackAtLatest);
     });
   });
 }
