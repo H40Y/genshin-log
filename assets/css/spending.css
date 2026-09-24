@@ -204,6 +204,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+.primogem-icon {
+  display: inline-block;
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: -0.32em;
+}
+
 .incentive-table {
   min-width: 680px;
 }

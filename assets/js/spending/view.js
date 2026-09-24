@@ -1,4 +1,5 @@
 let spendingDigitRollAnimationFrame = null;
+const spendingPrimogemIcon = '<img class="primogem-icon" src="./assets/primogem.png" alt="原石" />';
 
 function buildSpendingDigitRoller(element, value) {
   if (!element) return;
@@ -130,7 +131,7 @@ function buildOtherItemsCard(totals) {
     </div>
     <div class="table-wrap">
       <table class="spending-table other-items-table">
-        <thead><tr><th>项目</th><th class="numeric-cell">氪金所得（原石）</th><th class="numeric-cell">金额</th><th>操作</th></tr></thead>
+        <thead><tr><th>项目</th><th class="numeric-cell">氪金所得${spendingPrimogemIcon}</th><th class="numeric-cell">金额</th><th>操作</th></tr></thead>
         <tbody>
           ${rows || '<tr><td class="empty-table-cell" colspan="4">还没有其他计数，点击右上角“＋”添加。</td></tr>'}
           ${rows ? `<tr class="table-total-row"><td>合计</td><td class="numeric-cell">${formatSpendingNumber(totals.otherPrimogems, 0)}</td><td class="numeric-cell">${formatSpendingCurrency(totals.otherTotal)}</td><td></td></tr>` : ''}
@@ -164,7 +165,7 @@ function buildIncentiveItemsCard(totals) {
     </div>
     <div class="table-wrap">
       <table class="spending-table incentive-table">
-        <thead><tr><th>项目</th><th class="numeric-cell">激励值（原石）</th><th class="numeric-cell">成本</th><th>操作</th></tr></thead>
+        <thead><tr><th>项目</th><th class="numeric-cell">激励值${spendingPrimogemIcon}</th><th class="numeric-cell">成本</th><th>操作</th></tr></thead>
         <tbody>
           ${rows || '<tr><td class="empty-table-cell" colspan="4">还没有激励计数，点击右上角“＋”添加。</td></tr>'}
           ${rows ? `<tr class="table-total-row"><td>合计</td><td class="numeric-cell">${formatSpendingNumber(totals.incentivePrimogems, 0)}</td><td class="numeric-cell">${formatSpendingCurrency(totals.incentiveCost)}</td><td></td></tr>` : ''}
@@ -219,7 +220,7 @@ function buildExtraBalanceCard(totals) {
         </span>
       </span>
     </div>
-    <div class="profit-value">${formatSignedNumber(totals.extraBalancePrimogems)} 原石</div>
+    <div class="profit-value">${formatSignedNumber(totals.extraBalancePrimogems)}${spendingPrimogemIcon}</div>
     <div class="profit-reference">${formatSignedCurrency(totals.extraBalance)}</div>`;
   return card;
 }
