@@ -141,7 +141,7 @@ function normalizeSpendingData(raw) {
     ? raw.otherItems.map((item, index) => ({
       id: String(item?.id ?? `other-${index + 1}`),
       name: String(item?.name ?? '').trim(),
-      amount: normalizeNonNegativeNumber(item?.amount),
+      amount: normalizeFiniteNumber(item?.amount),
       primogems: normalizeCount(item?.primogems),
       updateTime: item?.updateTime ?? null,
     })).filter((item) => item.name)
@@ -214,7 +214,7 @@ function summarizeSpending() {
   const fixedTotal = SPENDING_FIXED_PURCHASES.reduce((sum, item) => {
     return sum + normalizeCount(data.fixedCounts[item.key]) * item.unitPrice;
   }, 0);
-  const otherTotal = data.otherItems.reduce((sum, item) => sum + normalizeNonNegativeNumber(item.amount), 0);
+  const otherTotal = data.otherItems.reduce((sum, item) => sum + normalizeFiniteNumber(item.amount), 0);
   const otherPrimogems = data.otherItems.reduce((sum, item) => sum + normalizeCount(item.primogems), 0);
   const incentivePrimogems = data.incentiveItems.reduce((sum, item) => sum + normalizeCount(item.primogems), 0);
   const incentiveCost = data.incentiveItems.reduce((sum, item) => sum + normalizeFiniteNumber(item.cost), 0);

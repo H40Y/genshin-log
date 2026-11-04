@@ -53,7 +53,7 @@ const precious = loadPageDataApi(
 );
 const spending = loadPageDataApi(
   ['assets/js/spending/core.js'],
-  ['buildSpendingTemplateData', 'validateAndNormalizeSpendingData'],
+  ['buildSpendingTemplateData', 'validateAndNormalizeSpendingData', 'getSpendingData', 'summarizeSpending'],
 );
 
 function withoutDataType(data) {
@@ -291,4 +291,21 @@ test('UIGF review version choices come only from the built-in catalog', () => {
   assert.match(options, /value="7\.8\.5">7\.8·下半/);
   assert.doesNotMatch(options, /<input/);
   assert.equal(wish.getPullVersionByTime('2024-08-27 23:59:59'), null);
+});
+
+
+test('spending discounts survive import and reduce spending while increasing extra balance', () => {
+  const input = spending.buildSpendingTemplateData();
+  input.fixedCounts.welkinMoon = 1;
+  input.otherItems.push({ name: '空月优惠', amount: -5, primogems: 0 });
+  input.incentiveItems.push({ name: '现金激励', cost: -2, primogems: 0 });
+  const normalized = spending.validateAndNormalizeSpendingData(input);
+  assert.equal(normalized.otherItems[0].amount, -5);
+  assert.equal(spending.validateAndNormalizeSpendingData(JSON.parse(JSON.stringify(normalized))).otherItems[0].amount, -5);
+  Object.assign(spending.getSpendingData(), normalized);
+  const totals = spending.summarizeSpending();
+  assert.equal(totals.otherTotal, -5);
+  assert.equal(totals.totalSpent, 25);
+  assert.equal(totals.extraBalance, 7);
+  assert.equal(totals.extraBalancePrimogems, 140);
 });

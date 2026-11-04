@@ -62,7 +62,7 @@ function saveOtherItem() {
   const amount = Number(otherItemAmountInput.value);
   const primogems = Number(otherItemPrimogemsInput.value);
   if (!name) throw new Error('项目不能为空。');
-  if (!Number.isFinite(amount) || amount < 0) throw new Error('金额必须是大于或等于 0 的数字。');
+  if (!Number.isFinite(amount)) throw new Error('金额必须是有效数字。');
   if (!Number.isInteger(primogems) || primogems < 0) throw new Error('氪金所得必须是大于或等于 0 的整数。');
 
   const input = { name, amount, primogems, updateTime: new Date().toISOString() };
