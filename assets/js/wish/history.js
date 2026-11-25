@@ -1,4 +1,4 @@
-let activeHistoryBanner = BANNERS[0];
+let activeHistoryBanner = BANNERS.find((banner) => banner.key === 'limitedCharacter');
 
 function getGap(history, item) {
   const index = history.findIndex((entry) => entry.id === item.id);

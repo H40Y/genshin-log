@@ -946,7 +946,6 @@ select {
   cursor: pointer;
   width: auto;
   max-width: 100%;
-  font-size: clamp(16px, 3vw, 20px);
 }
 .dialog-actions {
   display: flex;
