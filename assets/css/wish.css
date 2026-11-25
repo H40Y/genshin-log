@@ -155,28 +155,26 @@ code {
 .stat-value { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
 .stat-meta { color: var(--muted); font-size: 13px; line-height: 1.6; }
 
-.banner-header,
-.history-header {
+.banner-header {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
   margin-bottom: 16px;
 }
+.history-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding-right: 42px;
+  margin-bottom: 16px;
+}
 .history-card {
   position: relative;
 }
-.history-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.banner-title,
-.history-header h3 { margin: 0 0 6px; font-size: 20px; }
-.history-header h3 { margin: 0; }
-.banner-subtitle,
-.history-header p { margin: 0; color: var(--muted); font-size: 14px; }
+.banner-title { margin: 0 0 6px; font-size: 20px; }
+.banner-subtitle { margin: 0; color: var(--muted); font-size: 14px; }
 .banner-pill,
 .history-summary {
   padding: 8px 12px;
@@ -978,6 +976,13 @@ select {
   -webkit-appearance: none;
   -moz-appearance: none;
 }
+.history-banner-select {
+  appearance: auto;
+  cursor: pointer;
+  width: auto;
+  max-width: 100%;
+  font-size: clamp(16px, 3vw, 20px);
+}
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -1082,7 +1087,6 @@ body.dialog-open {
   .app-shell { padding: 16px; }
   .topbar,
   .banner-header,
-  .history-header,
   .history-pagination { flex-direction: column; }
   .topbar-actions {
     align-items: flex-start;
@@ -1148,7 +1152,6 @@ body.dialog-open {
   .history-toolbar { justify-content: flex-start; }
   .history-card { padding-top: 16px; }
   .section-corner-button { top: 14px; right: 14px; }
-  .history-header { padding-right: 42px; }
   .grid.cards-4,
   .grid.cards-3,
   .banner-grid,
@@ -1187,12 +1190,10 @@ body.dialog-open {
     gap: 10px;
     margin-bottom: 12px;
   }
-  .banner-title,
-  .history-header h3 {
+  .banner-title {
     font-size: 17px;
   }
-  .banner-subtitle,
-  .history-header p {
+  .banner-subtitle {
     font-size: 12px;
   }
   .banner-grid {

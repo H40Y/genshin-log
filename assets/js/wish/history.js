@@ -1,3 +1,5 @@
+let activeHistoryBanner = BANNERS[0];
+
 function getGap(history, item) {
   const index = history.findIndex((entry) => entry.id === item.id);
   if (index <= 0) return item.pullIndex;
@@ -118,78 +120,100 @@ function createPageSizeControl() {
   return wrap;
 }
 
-function renderHistory(data) {
+function createHistoryHeader() {
   const sectionHeader = document.createElement('div');
   sectionHeader.className = 'section-header history-section-header';
   sectionHeader.innerHTML = '<h2>5★ 历史</h2>';
   sectionHeader.appendChild(createPageSizeControl());
+  return sectionHeader;
+}
 
-  historySection.replaceChildren(sectionHeader);
+function createHistoryCard() {
+  const sectionCard = document.createElement('article');
+  sectionCard.className = 'card history-card';
+  sectionCard.innerHTML = `
+    <div class="history-header">
+      <div class="history-summary"></div>
+    </div>
+    <button type="button" class="ghost-button section-corner-button">+</button>
+    <div class="history-card-content"></div>
+  `;
 
+  const select = document.createElement('select');
+  select.className = 'history-banner-select';
+  select.setAttribute('aria-label', '选择 5★ 历史卡池');
   BANNERS.forEach((banner) => {
-    const bannerData = data.wishData[banner.key];
-    const sortedHistory = bannerData.fiveStarHistory.slice().sort((a, b) => a.pullIndex - b.pullIndex);
-    const descHistory = sortedHistory.slice().sort((a, b) => b.pullIndex - a.pullIndex);
-    const totalPages = Math.max(1, Math.ceil(descHistory.length / pageSize));
-    currentPages[banner.key] = Math.min(currentPages[banner.key] || 1, totalPages);
-    const start = (currentPages[banner.key] - 1) * pageSize;
-    const pageItems = descHistory.slice(start, start + pageSize);
-
-    const sectionCard = document.createElement('article');
-    sectionCard.className = 'card history-card';
-
-    const rows = pageItems.map((item) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = buildHistoryTable(item, banner.key, sortedHistory);
-      return tr;
-    });
-
-    const table = document.createElement('table');
-    table.className = 'history-table';
-    table.innerHTML = `
-      <colgroup>
-        <col class="history-col-pull-index">
-        <col class="history-col-gap">
-        <col class="history-col-name">
-        <col class="history-col-type">
-        <col class="history-col-detail">
-        <col class="history-col-action">
-      </colgroup>
-      <thead>${buildHistoryHead(banner.key)}</thead>
-    `;
-    const tbody = document.createElement('tbody');
-    rows.forEach((row) => tbody.appendChild(row));
-    table.appendChild(tbody);
-
-    const tableWrap = document.createElement('div');
-    tableWrap.className = 'table-wrap';
-    tableWrap.appendChild(table);
-
-    sectionCard.innerHTML = `
-      <div class="history-header">
-        <div class="history-header-left">
-          <h3>${banner.label}</h3>
-          <div class="history-summary">${fmt(bannerData.fiveStarHistory.length)} 条 5★ 记录</div>
-        </div>
-        <div></div>
-      </div>
-    `;
-
-    const addButton = document.createElement('button');
-    addButton.type = 'button';
-    addButton.className = 'ghost-button section-corner-button';
-    addButton.textContent = '+';
-    addButton.setAttribute('aria-label', `新增${banner.label}5★`);
-    addButton.title = `新增${banner.label} 5★`;
-    addButton.addEventListener('click', () => openCreateDialog(banner.key));
-
-    sectionCard.appendChild(addButton);
-    sectionCard.appendChild(tableWrap);
-    sectionCard.appendChild(createPaginationControls(banner.key, descHistory.length, totalPages));
-    historySection.appendChild(sectionCard);
+    const option = document.createElement('option');
+    option.value = banner.key;
+    option.textContent = banner.label;
+    select.appendChild(option);
+  });
+  select.value = activeHistoryBanner.key;
+  select.addEventListener('change', () => {
+    activeHistoryBanner = BANNERS.find((banner) => banner.key === select.value);
+    renderHistory(currentData);
   });
 
-  historySection.querySelectorAll('[data-action="edit"]').forEach((button) => {
+  sectionCard.querySelector('.history-header').prepend(select);
+  sectionCard.querySelector('.section-corner-button').addEventListener('click', () => {
+    openCreateDialog(activeHistoryBanner.key);
+  });
+  return sectionCard;
+}
+
+function renderHistory(data) {
+  let sectionCard = historySection.querySelector('.history-card');
+  if (!sectionCard) {
+    sectionCard = createHistoryCard();
+    historySection.append(createHistoryHeader(), sectionCard);
+  }
+
+  const banner = activeHistoryBanner;
+  const bannerData = data.wishData[banner.key];
+  const sortedHistory = bannerData.fiveStarHistory.slice().sort((a, b) => a.pullIndex - b.pullIndex);
+  const descHistory = sortedHistory.slice().sort((a, b) => b.pullIndex - a.pullIndex);
+  const totalPages = Math.max(1, Math.ceil(descHistory.length / pageSize));
+  currentPages[banner.key] = Math.min(currentPages[banner.key] || 1, totalPages);
+  const start = (currentPages[banner.key] - 1) * pageSize;
+  const pageItems = descHistory.slice(start, start + pageSize);
+
+  const rows = pageItems.map((item) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = buildHistoryTable(item, banner.key, sortedHistory);
+    return tr;
+  });
+
+  const table = document.createElement('table');
+  table.className = 'history-table';
+  table.innerHTML = `
+    <colgroup>
+      <col class="history-col-pull-index">
+      <col class="history-col-gap">
+      <col class="history-col-name">
+      <col class="history-col-type">
+      <col class="history-col-detail">
+      <col class="history-col-action">
+    </colgroup>
+    <thead>${buildHistoryHead(banner.key)}</thead>
+  `;
+  const tbody = document.createElement('tbody');
+  rows.forEach((row) => tbody.appendChild(row));
+  table.appendChild(tbody);
+
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'table-wrap';
+  tableWrap.appendChild(table);
+
+  sectionCard.querySelector('.history-summary').textContent = `${fmt(descHistory.length)} 条 5★ 记录`;
+  const addButton = sectionCard.querySelector('.section-corner-button');
+  addButton.setAttribute('aria-label', `新增${banner.label}5★`);
+  addButton.title = `新增${banner.label} 5★`;
+  table.querySelectorAll('[data-action="edit"]').forEach((button) => {
     button.addEventListener('click', () => openEditDialog(button.dataset.banner, button.dataset.recordId));
   });
+
+  sectionCard.querySelector('.history-card-content').replaceChildren(
+    tableWrap,
+    createPaginationControls(banner.key, descHistory.length, totalPages),
+  );
 }
