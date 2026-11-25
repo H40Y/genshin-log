@@ -45,8 +45,7 @@ function loadCharacterOverviewApi() {
     filterCharacterOverviewCharacters,
     formatCharacterPullLabel,
     getCharacterPullPillClass,
-    getCharacterPullScrollState,
-    paginateCharacterOverview,
+    groupCharacterOverviewByCount,
     sortCharacterPullRecords,
   };`, context);
   return context.testApi;
@@ -256,29 +255,33 @@ test('standard characters use the theme pill for the first seven pulls while lim
   );
 });
 
-test('character overview pagination defaults to ten items and clamps invalid pages', () => {
-  const characters = Array.from({ length: 23 }, (_, index) => ({ name: `角色 ${index + 1}` }));
-  const firstPage = api.paginateCharacterOverview(characters, 1, 10);
-  const lastPage = api.paginateCharacterOverview(characters, 99, 10);
+test('the overview combines all counts above seven and keeps seven in its own group', () => {
+  const limited = [
+    ['迪卢克', 10],
+    ['琴', 8],
+    ['恰斯卡', 7],
+    ['菲林斯', 3],
+    ['尼可', 3],
+  ].flatMap(([itemName, count]) => Array.from({ length: count }, () => ({
+    itemName,
+    itemType: '角色',
+  }))).map((record, index) => ({ ...record, pullIndex: index + 1 }));
 
-  assert.equal(firstPage.currentPage, 1);
-  assert.equal(firstPage.items.length, 10);
-  assert.equal(firstPage.totalPages, 3);
-  assert.equal(lastPage.currentPage, 3);
-  assert.equal(lastPage.items.length, 3);
-});
+  const characters = api.buildCharacterOverview(makeData([], limited));
+  const groups = api.groupCharacterOverviewByCount(characters);
+  assert.deepEqual(
+    Array.from(groups, ([count, group]) => [count, Array.from(group, (item) => item.name)]),
+    [
+      [8, ['迪卢克', '琴']],
+      [7, ['恰斯卡']],
+      [3, ['尼可', '菲林斯']],
+    ],
+  );
+  assert.equal(groups.get(8)[0].pulls.length, 10);
+  assert.equal(groups.get(8)[1].pulls.length, 8);
 
-test('scroll hints reflect the available directions without exposing a scrollbar dependency', () => {
-  assert.deepEqual(
-    { ...api.getCharacterPullScrollState({ scrollLeft: 0, scrollWidth: 700, clientWidth: 300 }) },
-    { isScrollable: true, canScrollLeft: false, canScrollRight: true, maxScrollLeft: 400 },
+  const filteredGroups = api.groupCharacterOverviewByCount(
+    api.filterCharacterOverviewCharacters(characters, false),
   );
-  assert.deepEqual(
-    { ...api.getCharacterPullScrollState({ scrollLeft: 400, scrollWidth: 700, clientWidth: 300 }) },
-    { isScrollable: true, canScrollLeft: true, canScrollRight: false, maxScrollLeft: 400 },
-  );
-  assert.deepEqual(
-    { ...api.getCharacterPullScrollState({ scrollLeft: 0, scrollWidth: 300, clientWidth: 300 }) },
-    { isScrollable: false, canScrollLeft: false, canScrollRight: false, maxScrollLeft: 0 },
-  );
+  assert.deepEqual(Array.from(filteredGroups.keys()), [7, 3]);
 });

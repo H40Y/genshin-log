@@ -1,9 +1,6 @@
-const CHARACTER_OVERVIEW_PURPLE_THRESHOLD = 7;
-const CHARACTER_OVERVIEW_DEFAULT_PAGE_SIZE = 10;
+const CHARACTER_OVERVIEW_COUNT_THRESHOLD = 7;
 const CHARACTER_OVERVIEW_DEFAULT_SHOW_STANDARD = true;
 
-let characterOverviewPageSize = CHARACTER_OVERVIEW_DEFAULT_PAGE_SIZE;
-let currentCharacterOverviewPage = 1;
 let showStandardCharacters = CHARACTER_OVERVIEW_DEFAULT_SHOW_STANDARD;
 
 function compareCharacterPullRecords(a, b) {
@@ -119,8 +116,8 @@ function buildCharacterOverview(data) {
     .map(([name, records]) => {
       const pulls = sortCharacterPullRecords(records).map((record, index) => ({
         ...record,
-        isPurple: index >= CHARACTER_OVERVIEW_PURPLE_THRESHOLD,
-        startsPurpleGroup: index === CHARACTER_OVERVIEW_PURPLE_THRESHOLD,
+        isPurple: index >= CHARACTER_OVERVIEW_COUNT_THRESHOLD,
+        startsPurpleGroup: index === CHARACTER_OVERVIEW_COUNT_THRESHOLD,
       }));
       return {
         name,
@@ -160,56 +157,17 @@ function getCharacterPullPillClass(character, record) {
   return 'character-pull-pill';
 }
 
-function getCharacterPullScrollState(pulls) {
-  const maxScrollLeft = Math.max(0, pulls.scrollWidth - pulls.clientWidth);
-  const isScrollable = maxScrollLeft > 1;
-  return {
-    isScrollable,
-    canScrollLeft: isScrollable && pulls.scrollLeft > 1,
-    canScrollRight: isScrollable && pulls.scrollLeft < maxScrollLeft - 1,
-    maxScrollLeft,
-  };
-}
-
-function updateCharacterPullScrollHint(pulls) {
-  const state = getCharacterPullScrollState(pulls);
-  pulls.classList.toggle('is-scrollable', state.isScrollable);
-  pulls.classList.toggle('can-scroll-left', state.canScrollLeft);
-  pulls.classList.toggle('can-scroll-right', state.canScrollRight);
-  return state;
-}
-
-function initializeCharacterPullScroller(pulls) {
-  pulls.addEventListener('scroll', () => updateCharacterPullScrollHint(pulls), { passive: true });
-  requestAnimationFrame(() => {
-    const state = getCharacterPullScrollState(pulls);
-    if (state.isScrollable) pulls.scrollLeft = state.maxScrollLeft;
-    updateCharacterPullScrollHint(pulls);
+function groupCharacterOverviewByCount(characters) {
+  const groups = new Map();
+  characters.forEach((character) => {
+    const count = Math.min(character.count, CHARACTER_OVERVIEW_COUNT_THRESHOLD + 1);
+    if (!groups.has(count)) groups.set(count, []);
+    groups.get(count).push(character);
   });
+  return groups;
 }
 
-function paginateCharacterOverview(characters, requestedPage, requestedPageSize) {
-  const pageSize = Math.max(1, Number(requestedPageSize) || CHARACTER_OVERVIEW_DEFAULT_PAGE_SIZE);
-  const totalPages = Math.max(1, Math.ceil(characters.length / pageSize));
-  const currentPage = Math.min(Math.max(1, Number(requestedPage) || 1), totalPages);
-  const start = (currentPage - 1) * pageSize;
-  return {
-    currentPage,
-    items: characters.slice(start, start + pageSize),
-    pageSize,
-    totalItems: characters.length,
-    totalPages,
-  };
-}
-
-function resetCharacterOverviewPagination() {
-  currentCharacterOverviewPage = 1;
-}
-
-function createCharacterOverviewPageSizeControl() {
-  const wrap = document.createElement('div');
-  wrap.className = 'history-toolbar character-overview-toolbar';
-
+function createCharacterOverviewFilter() {
   const standardFilter = document.createElement('label');
   standardFilter.className = 'character-overview-filter';
 
@@ -218,129 +176,78 @@ function createCharacterOverviewPageSizeControl() {
   standardCheckbox.checked = showStandardCharacters;
   standardCheckbox.addEventListener('change', () => {
     showStandardCharacters = standardCheckbox.checked;
-    resetCharacterOverviewPagination();
     renderCharacterOverview(currentData);
+    characterOverviewSection.querySelector('.character-overview-filter input').focus();
   });
 
   const standardFilterText = document.createElement('span');
   standardFilterText.textContent = '显示常驻';
   standardFilter.append(standardCheckbox, standardFilterText);
 
-  const label = document.createElement('label');
-  label.className = 'history-page-size';
-  label.innerHTML = '<span>每页角色</span>';
-
-  const select = document.createElement('select');
-  PAGE_SIZE_OPTIONS.forEach((size) => {
-    const option = document.createElement('option');
-    option.value = String(size);
-    option.textContent = `${size} 个`;
-    option.selected = size === characterOverviewPageSize;
-    select.appendChild(option);
-  });
-
-  select.addEventListener('change', () => {
-    characterOverviewPageSize = Number(select.value);
-    resetCharacterOverviewPagination();
-    renderCharacterOverview(currentData);
-  });
-
-  label.appendChild(select);
-  wrap.append(standardFilter, label);
-  return wrap;
+  return standardFilter;
 }
 
-function createCharacterOverviewPagination(pagination) {
-  const controls = document.createElement('div');
-  controls.className = 'history-pagination character-overview-pagination';
+function showCharacterPullDetails(character) {
+  const title = characterPullDialog.querySelector('#character-pull-dialog-title');
+  const pulls = characterPullDialog.querySelector('.character-overview-pulls');
+  title.textContent = `${character.name} · ${fmt(character.count)} 次`;
 
-  const pageInfo = document.createElement('div');
-  pageInfo.className = 'history-pagination-info';
-  pageInfo.textContent = `第 ${pagination.currentPage} / ${pagination.totalPages} 页，共 ${fmt(pagination.totalItems)} 个角色`;
-
-  const actions = document.createElement('div');
-  actions.className = 'history-pagination-actions';
-
-  const prevBtn = document.createElement('button');
-  prevBtn.type = 'button';
-  prevBtn.className = 'ghost-button';
-  prevBtn.textContent = '上一页';
-  prevBtn.disabled = pagination.currentPage <= 1;
-  prevBtn.addEventListener('click', () => {
-    currentCharacterOverviewPage -= 1;
-    renderCharacterOverview(currentData);
-  });
-
-  const nextBtn = document.createElement('button');
-  nextBtn.type = 'button';
-  nextBtn.className = 'ghost-button';
-  nextBtn.textContent = '下一页';
-  nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
-  nextBtn.addEventListener('click', () => {
-    currentCharacterOverviewPage += 1;
-    renderCharacterOverview(currentData);
-  });
-
-  actions.append(prevBtn, nextBtn);
-  controls.append(pageInfo, actions);
-  return controls;
-}
-
-function createCharacterOverviewRow(character) {
-  const row = document.createElement('div');
-  row.className = 'character-overview-row';
-
-  const identity = document.createElement('div');
-  identity.className = 'character-overview-identity';
-
-  const name = document.createElement('span');
-  name.className = 'character-overview-name';
-  name.textContent = character.name;
-
-  const count = document.createElement('span');
-  count.className = 'character-overview-count';
-  count.textContent = fmt(character.count);
-  count.setAttribute('aria-label', `共 ${character.count} 次`);
-  identity.append(name, count);
-
-  const pulls = document.createElement('div');
-  pulls.className = 'character-overview-pulls';
-  pulls.tabIndex = 0;
-  pulls.setAttribute('aria-label', `${character.name}的抽取记录，可横向滑动`);
+  const entries = document.createDocumentFragment();
   character.pulls.forEach((record) => {
     if (record.startsPurpleGroup) {
       const separator = document.createElement('span');
       separator.className = 'character-pull-separator';
       separator.textContent = '｜';
       separator.setAttribute('aria-hidden', 'true');
-      pulls.appendChild(separator);
+      entries.appendChild(separator);
     }
 
     const pill = document.createElement('span');
     pill.className = getCharacterPullPillClass(character, record);
     pill.textContent = formatCharacterPullLabel(record);
-    pulls.appendChild(pill);
+    entries.appendChild(pill);
   });
-  initializeCharacterPullScroller(pulls);
+  pulls.replaceChildren(entries);
+  characterPullDialog.showModal();
+  syncBodyDialogState();
+}
 
-  row.append(identity, pulls);
+function createCharacterOverviewRow(count, characters) {
+  const row = document.createElement('div');
+  row.className = 'character-overview-row';
+
+  const label = document.createElement('div');
+  label.className = 'character-overview-count';
+  label.textContent = count > CHARACTER_OVERVIEW_COUNT_THRESHOLD
+    ? `${CHARACTER_OVERVIEW_COUNT_THRESHOLD}+次`
+    : `${count}次`;
+
+  const names = document.createElement('div');
+  names.className = 'character-overview-names';
+  characters.forEach((character) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = getCharacterPullPillClass(character, {
+      isPurple: count > CHARACTER_OVERVIEW_COUNT_THRESHOLD,
+    }) + ' character-overview-name';
+    button.textContent = character.name;
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.addEventListener('click', () => showCharacterPullDetails(character));
+    names.appendChild(button);
+  });
+
+  row.append(label, names);
   return row;
 }
 
 function renderCharacterOverview(data) {
   const allCharacters = buildCharacterOverview(data);
   const characters = filterCharacterOverviewCharacters(allCharacters, showStandardCharacters);
-  const pagination = paginateCharacterOverview(
-    characters,
-    currentCharacterOverviewPage,
-    characterOverviewPageSize,
-  );
-  currentCharacterOverviewPage = pagination.currentPage;
 
   const header = document.createElement('div');
   header.className = 'section-header history-section-header character-overview-section-header';
   header.innerHTML = '<h2>角色总览</h2>';
-  header.appendChild(createCharacterOverviewPageSizeControl());
+  header.appendChild(createCharacterOverviewFilter());
 
   const card = document.createElement('article');
   card.className = 'card character-overview-card';
@@ -353,10 +260,9 @@ function renderCharacterOverview(data) {
       : '暂无 5★ 角色记录';
     card.appendChild(empty);
   } else {
-    pagination.items.forEach((character) => {
-      card.appendChild(createCharacterOverviewRow(character));
+    groupCharacterOverviewByCount(characters).forEach((group, count) => {
+      card.appendChild(createCharacterOverviewRow(count, group));
     });
-    card.appendChild(createCharacterOverviewPagination(pagination));
   }
 
   characterOverviewSection.replaceChildren(header, card);

@@ -2,6 +2,7 @@ const overviewSection = document.querySelector('#overview-section');
 const bannerSection = document.querySelector('#banner-section');
 const timelineSection = document.querySelector('#timeline-section');
 const characterOverviewSection = document.querySelector('#character-overview-section');
+const characterPullDialog = document.querySelector('#character-pull-dialog');
 const historySection = document.querySelector('#history-section');
 const syncStatus = document.querySelector('#sync-status');
 const timelineTooltip = document.querySelector('#timeline-tooltip');

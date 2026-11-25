@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>抽卡记录</title>
     <script>
-      const wishAssetVersion = '20261125-2';
+      const wishAssetVersion = '20261125-4';
       document.write(`<link rel="stylesheet" href="./assets/css/wish.css?v=${wishAssetVersion}" />`);
     </script>
   </head>
@@ -135,6 +135,16 @@
           <button type="button" class="ghost-button mobile-dialog-cancel" id="total-pulls-cancel-mobile">取消</button>
           <button type="submit" class="primary-button">保存修改</button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="character-pull-dialog" class="edit-dialog" aria-labelledby="character-pull-dialog-title">
+      <form method="dialog" class="edit-form">
+        <div class="dialog-header">
+          <h3 id="character-pull-dialog-title"></h3>
+          <button type="submit" class="ghost-button">关闭</button>
+        </div>
+        <div class="character-overview-pulls"></div>
       </form>
     </dialog>
 
